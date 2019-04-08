@@ -32,3 +32,7 @@ You can monitor the Thing status from the AWS IoT console web interface:
 If you're having problems with the AWS IoT connection itself, check the Troubleshooting section of the README in the parent directory.
 
 * If your Thing is connecting and appears to be successfully updating, but you don't see any updates in the AWS IoT console, then check that the Thing Name in the Example Configuration under menuconfig matches exactly the thing name in AWS IoT console (including case).
+
+# Important Note
+
+This example has dependency on `esp-aws-iot` component which is added through `EXTRA_COMPONENT_DIRS` in its `Makefile` or `CMakeLists.txt` (using relative path). Hence if example is moved outside of this repository then this dependency can be resolved by copying `esp_aws_iot` under `components` subdirectory of the example project.
