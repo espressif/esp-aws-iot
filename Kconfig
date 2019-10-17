@@ -28,7 +28,7 @@ config AWS_IOT_MQTT_PORT
 config AWS_IOT_MQTT_TX_BUF_LEN
     int "MQTT TX Buffer Length"
     default 512
-    range 32 65536
+    range 32 131072
     help
         Maximum MQTT transmit buffer size. This is the maximum MQTT
         message length (including protocol overhead) which can be sent.
@@ -38,7 +38,7 @@ config AWS_IOT_MQTT_TX_BUF_LEN
 config AWS_IOT_MQTT_RX_BUF_LEN
     int "MQTT RX Buffer Length"
     default 512
-    range 32 65536
+    range 32 131072
     help
         Maximum MQTT receive buffer size. This is the maximum MQTT
         message length (including protocol overhead) which can be
