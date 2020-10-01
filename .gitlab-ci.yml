@@ -6,6 +6,7 @@ variables:
   V: "0"
   MAKEFLAGS: "-j5 --no-keep-going"
   IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
+  IDF_GITHUB_REPO: "https://github.com/espressif"
 
 build_demo:
   stage: build
@@ -22,8 +23,7 @@ build_demo:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git --version
-    - git submodule update --init --recursive
-    - git clone --recursive --depth 1 $GITLAB_SSH_SERVER/idf/esp-idf.git
+    - git clone --recursive --branch master --depth 1 $IDF_GITHUB_REPO/esp-idf.git
     - export PATH="$IDF_PATH/tools:$PATH"
     - cd esp-idf
     - ./install.sh
