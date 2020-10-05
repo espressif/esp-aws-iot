@@ -23,6 +23,7 @@ build_demo:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
     - git --version
+    - git submodule update --init --recursive
     - git clone --recursive --branch master --depth 1 $IDF_GITHUB_REPO/esp-idf.git
     - export PATH="$IDF_PATH/tools:$PATH"
     - cd esp-idf
