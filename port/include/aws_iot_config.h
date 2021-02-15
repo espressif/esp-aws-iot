@@ -62,4 +62,9 @@
 #define AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL CONFIG_AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL ///< Minimum time before the First reconnect attempt is made as part of the exponential back-off algorithm
 #define AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL CONFIG_AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL ///< Maximum time interval after which exponential back-off will stop attempting to reconnect.
 
+// TLS configs
+#define IOT_SSL_READ_TIMEOUT_MS 3 ///< Timeout associated with underlying socket of TLS connection (set by mbedtls_ssl_conf_read_timeout)
+#define IOT_SSL_READ_RETRY_TIMEOUT_MS 10 ///< Minimum elapsed time before returning from iot_tls_read when pending data has not yet been received
+#define IOT_SSL_WRITE_RETRY_TIMEOUT_MS 10 ///< Minimum elapsed time before returning from iot_tls_write when pending data has not yet been written
+
 #endif /* _AWS_IOT_CONFIG_H_ */

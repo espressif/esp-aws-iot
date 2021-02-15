@@ -47,7 +47,6 @@ config AWS_IOT_MQTT_RX_BUF_LEN
         Longer messages are dropped.
 
 
-
 config AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS
     int "Maximum MQTT Topic Filters"
     default 5
@@ -155,4 +154,11 @@ menu "Thing Shadow"
             Maximum length of a Thing Name.
 
 endmenu  # Thing Shadow
+
+config AWS_IOT_SSL_SOCKET_NON_BLOCKING
+    bool "Set socket as non blocking"
+    default n
+    help
+        Allow setting the ssl socket to non blocking mode
+
 endmenu  # AWS IoT
