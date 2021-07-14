@@ -1,26 +1,37 @@
-set(COMPONENT_ADD_INCLUDEDIRS "port/include aws-iot-device-sdk-embedded-C/include")
-set(aws_sdk_dir aws-iot-device-sdk-embedded-C/src)
-set(COMPONENT_SRCS "${aws_sdk_dir}/aws_iot_jobs_interface.c"
-                   "${aws_sdk_dir}/aws_iot_jobs_json.c"
-                   "${aws_sdk_dir}/aws_iot_jobs_topics.c"
-                   "${aws_sdk_dir}/aws_iot_jobs_types.c"
-                   "${aws_sdk_dir}/aws_iot_json_utils.c"
-                   "${aws_sdk_dir}/aws_iot_mqtt_client.c"
-                   "${aws_sdk_dir}/aws_iot_mqtt_client_common_internal.c"
-                   "${aws_sdk_dir}/aws_iot_mqtt_client_connect.c"
-                   "${aws_sdk_dir}/aws_iot_mqtt_client_publish.c"
-                   "${aws_sdk_dir}/aws_iot_mqtt_client_subscribe.c"
-                   "${aws_sdk_dir}/aws_iot_mqtt_client_unsubscribe.c"
-                   "${aws_sdk_dir}/aws_iot_mqtt_client_yield.c"
-                   "${aws_sdk_dir}/aws_iot_shadow.c"
-                   "${aws_sdk_dir}/aws_iot_shadow_actions.c"
-                   "${aws_sdk_dir}/aws_iot_shadow_json.c"
-                   "${aws_sdk_dir}/aws_iot_shadow_records.c"
-                   "port/network_mbedtls_wrapper.c"
-                   "port/threads_freertos.c"
-                   "port/timer.c")
+#
+# Component Makefile
+#
 
-set(COMPONENT_REQUIRES "mbedtls")
-set(COMPONENT_PRIV_REQUIRES "jsmn")
+set (includes)
+set (srcs)
+set (priv_includes)
 
-register_component()
+list(APPEND includes
+    "aws-iot-device-sdk-embedded-C/libraries/standard/backoffAlgorithm/source/include/"
+    "aws-iot-device-sdk-embedded-C/platform/include/"
+    "aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/source/include"
+    "aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/source/interface"
+    "aws-iot-device-sdk-embedded-C/libraries/standard/coreJSON/source/include"
+    "aws-iot-device-sdk-embedded-C/libraries/aws/device-shadow-for-aws-iot-embedded-sdk/source/include"
+    "port/include"
+    "port/logging"
+    "port/network_transport"
+    "port/mqtt_helpers"
+    )
+
+list(APPEND srcs
+    "aws-iot-device-sdk-embedded-C/libraries/standard/backoffAlgorithm/source/backoff_algorithm.c"
+    "aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/source/core_mqtt_serializer.c"
+    "aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/source/core_mqtt_state.c"
+    "aws-iot-device-sdk-embedded-C/libraries/standard/coreMQTT/source/core_mqtt.c"
+    "aws-iot-device-sdk-embedded-C/libraries/standard/coreJSON/source/core_json.c"
+    "aws-iot-device-sdk-embedded-C/libraries/aws/device-shadow-for-aws-iot-embedded-sdk/source/shadow.c"
+    "aws-iot-device-sdk-embedded-C/platform/posix/clock_posix.c"
+    "port/network_transport/tls_freertos.c"
+    "port/mqtt_helpers/mqtt_demo_helpers.c"
+    )
+
+idf_component_register(SRCS "${srcs}"
+                    INCLUDE_DIRS ${includes}
+                    PRIV_INCLUDE_DIRS ${priv_includes}
+                    REQUIRES lwip nghttp mbedtls tcp_transport)
