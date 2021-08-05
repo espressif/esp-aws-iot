@@ -69,6 +69,7 @@
 struct NetworkContext
 {
     esp_transport_handle_t transport;
+    esp_transport_list_handle_t transport_list;
     uint32_t receiveTimeoutMs;
     uint32_t sendTimeoutMs;
 };

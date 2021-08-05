@@ -37,6 +37,8 @@
 #include "esp_log.h"
 
 static const char *TAG = "tls_freertos";
+
+#define TLS_DEFAULT_PORT 443
 /*-----------------------------------------------------------*/
 
 TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
@@ -46,6 +48,7 @@ TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
                                            uint32_t receiveTimeoutMs,
                                            uint32_t sendTimeoutMs )
 {
+    esp_err_t ret;
     TlsTransportStatus_t returnStatus = TLS_TRANSPORT_SUCCESS;
 
     if( ( pNetworkContext == NULL ) ||
@@ -61,6 +64,15 @@ TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
     }
     
     pNetworkContext->transport = esp_transport_ssl_init();
+    pNetworkContext->transport_list = esp_transport_list_init();
+    ret = esp_transport_set_default_port(pNetworkContext->transport, TLS_DEFAULT_PORT);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set default port for transport (%d)!", ret);
+    }
+    ret = esp_transport_list_add(pNetworkContext->transport_list, pNetworkContext->transport, "ssl");
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to add transport to list (%d)!", ret);
+    }
     pNetworkContext->receiveTimeoutMs = receiveTimeoutMs;
     pNetworkContext->sendTimeoutMs = sendTimeoutMs;
     if (pNetworkCredentials->pAlpnProtos) {

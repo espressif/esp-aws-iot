@@ -171,7 +171,7 @@
  * in the link below.
  * https://aws.amazon.com/blogs/iot/mqtt-with-tls-client-authentication-on-port-443-why-it-is-useful-and-how-it-works/
  */
-#define AWS_IOT_MQTT_ALPN               "\x0ex-amzn-mqtt-ca"
+#define AWS_IOT_MQTT_ALPN               "x-amzn-mqtt-ca"
 
 /**
  * @brief Length of ALPN protocol name.
@@ -182,7 +182,7 @@
  * @brief This is the ALPN (Application-Layer Protocol Negotiation) string
  * required by AWS IoT for password-based authentication using TCP port 443.
  */
-#define AWS_IOT_PASSWORD_ALPN           "\x04mqtt"
+#define AWS_IOT_PASSWORD_ALPN           "mqtt"
 
 /**
  * @brief Length of password ALPN.
@@ -609,17 +609,19 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
          * link below.
          * https://docs.aws.amazon.com/iot/latest/developerguide/custom-authentication.html
          */
+
+        static const char * pcAlpnProtocols[] = { NULL, NULL };
+
+        #ifdef CLIENT_USERNAME
+            pcAlpnProtocols[0] = AWS_IOT_PASSWORD_ALPN;
+        #else
+            pcAlpnProtocols[0] = AWS_IOT_MQTT_ALPN;
+        #endif
+
+        opensslCredentials->pAlpnProtos = pcAlpnProtocols;
+    } else {
+        opensslCredentials->pAlpnProtos = NULL;
     }
-
-    char * pcAlpnProtocols[] = { NULL, NULL };
-
-    /* The ALPN string changes depending on whether username/password authentication is used. */
-    #ifdef CLIENT_USERNAME
-        pcAlpnProtocols[ 0 ] = AWS_IOT_CUSTOM_AUTH_ALPN;
-    #else
-        pcAlpnProtocols[ 0 ] = AWS_IOT_MQTT_ALPN;
-    #endif
-    opensslCredentials->pAlpnProtos = pcAlpnProtocols;
 
     /* Initialize reconnect attempts and interval */
     BackoffAlgorithm_InitializeParams( &reconnectParams,
