@@ -1,0 +1,19 @@
+menu "Example Configuration"
+
+config AWS_IOT_ENDPOINT
+    string "AWS IoT Core endpoint to connect to"
+
+config AWS_HTTPS_PORT
+    int "Port of the MQTT broker use"
+    default 8443
+    help
+        Port 443 requires use of the ALPN TLS extension with the ALPN protocol name.
+        When using port 8443, ALPN is not required.
+
+config HARDWARE_PLATFORM_NAME
+    string "The hardware platform"
+    default "ESP32"
+    help
+        The name of the hardware platform the application is running on.
+
+endmenu
