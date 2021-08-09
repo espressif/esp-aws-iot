@@ -24,7 +24,7 @@
 #define MQTT_DEMO_HELPERS_H_
 
 /* Include Demo Config as the first non-system header. */
-#include "shadow_demo_config.h"
+#include "demo_config.h"
 
 /* MQTT API header. */
 #include "core_mqtt.h"

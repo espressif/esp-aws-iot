@@ -15,7 +15,7 @@ config MQTT_BROKER_ENDPOINT
 
 config MQTT_BROKER_PORT
     int "Port of the MQTT broker use"
-    default 8884
+    default 8883
     help
         In general, port 8883 is for secured MQTT connections.
         Port 443 requires use of the ALPN TLS extension with the ALPN protocol name.

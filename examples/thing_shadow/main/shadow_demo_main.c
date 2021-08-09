@@ -67,7 +67,7 @@
 #include "clock.h"
 
 /* shadow demo helpers header. */
-#include "mqtt_demo_helpers.h"
+#include "shadow_demo_helpers.h"
 
 /**
  * @brief Format string representing a Shadow document with a "desired" state.

@@ -39,7 +39,7 @@
 #include <time.h>
 
 /* Shadow includes */
-#include "mqtt_demo_helpers.h"
+#include "shadow_demo_helpers.h"
 
 /* POSIX includes. */
 #include <unistd.h>
@@ -110,7 +110,7 @@ extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
  * in the link below.
  * https://aws.amazon.com/blogs/iot/mqtt-with-tls-client-authentication-on-port-443-why-it-is-useful-and-how-it-works/
  */
-#define ALPN_PROTOCOL_NAME           "\x0ex-amzn-mqtt-ca"
+#define ALPN_PROTOCOL_NAME           "x-amzn-mqtt-ca"
 
 /**
  * @brief Length of ALPN protocol name.
@@ -352,17 +352,12 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
          * in the link below.
          * https://aws.amazon.com/blogs/iot/mqtt-with-tls-client-authentication-on-port-443-why-it-is-useful-and-how-it-works/
          */
+        static const char * pcAlpnProtocols[] = { NULL, NULL };
+        pcAlpnProtocols[0] = ALPN_PROTOCOL_NAME;
+        opensslCredentials->pAlpnProtos = pcAlpnProtocols;
+    } else {
+        opensslCredentials->pAlpnProtos = NULL;
     }
-
-        
-    char * pcAlpnProtocols[] = { NULL, NULL };
-    /* The ALPN string changes depending on whether username/password authentication is used. */
-    #ifdef CLIENT_USERNAME
-        pcAlpnProtocols[ 0 ] = AWS_IOT_CUSTOM_AUTH_ALPN;
-    #else
-        pcAlpnProtocols[ 0 ] = ALPN_PROTOCOL_NAME;
-    #endif
-    opensslCredentials->pAlpnProtos = pcAlpnProtocols;
 
     /* Seed pseudo random number generator used in the demo for
      * backoff period calculation when retrying failed network operations
