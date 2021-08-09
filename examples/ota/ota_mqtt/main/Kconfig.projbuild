@@ -1,0 +1,53 @@
+menu "Example Configuration"
+
+config MQTT_CLIENT_IDENTIFIER
+    string "The MQTT client identifier used in this example"
+	default "testClient"
+	help
+        The MQTT client identifier used in this example. Each client identifier must be unique.
+        so edit as required to ensure that no two clients connecting to the same broker use the same client identifier.
+
+config MQTT_BROKER_ENDPOINT
+    string "Endpoint of the MQTT broker to connect to"
+    default "test.mosquitto.org"
+    help
+        This example can be run with any MQTT broker, that supports server authentication.
+
+config MQTT_BROKER_PORT
+    int "Port of the MQTT broker use"
+    default 8883
+    help
+        In general, port 8883 is for secured MQTT connections.
+        Port 443 requires use of the ALPN TLS extension with the ALPN protocol name.
+        When using port 8883, ALPN is not required.
+
+config MQTT_OPTION_SNI
+    int "An option to disable Server Name Indication"
+    range 0 1
+    default 0
+    help
+        When using a local Mosquitto server setup, SNI needs to be disabled
+        for an MQTT broker that only has an IP address but no hostname. However,
+        SNI should be enabled whenever possible.
+
+config HARDWARE_PLATFORM_NAME
+    string "The hardware platform"
+    default "ESP32"
+    help
+        The name of the hardware platform the application is running on.
+
+config MQTT_EXAMPLE_STACKSIZE
+    int "Set the stack size of the example task"
+    range 5120 8192
+    default 5120
+    help
+        The actual stack is created by an operating system thread.
+
+config MQTT_NETWORK_BUFFER_SIZE
+    int "Size of the network buffer for MQTT packets"
+    range 1024 2048
+    default 1024
+    help
+        Size of the network buffer for MQTT packets.
+
+endmenu
