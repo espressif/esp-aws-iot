@@ -112,9 +112,9 @@ TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
     }
     else
     {
-        ESP_LOGI(TAG, "(Network connection %p) Connection to %s established.",
+        ESP_LOGI(TAG, "(Network connection %p) Connection to %s:%d established.",
                    pNetworkContext,
-                   pHostName);
+                   pHostName, port);
     }
 
     return returnStatus;
