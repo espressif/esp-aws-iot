@@ -39,6 +39,11 @@
 /* Standard Include. */
 #include <stdio.h>
 #include <stdint.h>
+#include "esp_log.h"
+
+#define EXTRACT_ARGS( ... ) __VA_ARGS__
+#define STRIP_PARENS( X )   X
+#define REMOVE_PARENS( X )  STRIP_PARENS( EXTRACT_ARGS X )
 
 /**
  * @brief The name of the library or demo to add as metadata in log messages
@@ -91,38 +96,38 @@
 #else
     #if LIBRARY_LOG_LEVEL == LOG_DEBUG
         /* All log level messages will logged. */
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogWarn( message )     SdkLog( ( "[WARN] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogInfo( message )     SdkLog( ( "[INFO] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogDebug( message )    SdkLog( ( "[DEBUG] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
+        #define LogError( message, ... )    ESP_LOGE(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogWarn( message, ... )     ESP_LOGW(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogInfo( message, ... )     ESP_LOGI(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogDebug( message, ... )    ESP_LOGD(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
 
     #elif LIBRARY_LOG_LEVEL == LOG_INFO
         /* Only INFO, WARNING and ERROR messages will be logged. */
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogWarn( message )     SdkLog( ( "[WARN] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogInfo( message )     SdkLog( ( "[INFO] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogDebug( message )
+        #define LogError( message, ... )    ESP_LOGE(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogWarn( message, ... )     ESP_LOGW(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogInfo( message, ... )     ESP_LOGI(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogDebug( message, ... )
 
     #elif LIBRARY_LOG_LEVEL == LOG_WARN
         /* Only WARNING and ERROR messages will be logged.*/
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogWarn( message )     SdkLog( ( "[WARN] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogInfo( message )
-        #define LogDebug( message )
+        #define LogError( message, ... )    ESP_LOGE(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogWarn( message, ... )     ESP_LOGW(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogInfo( message, ... )
+        #define LogDebug( message, ... )
 
     #elif LIBRARY_LOG_LEVEL == LOG_ERROR
         /* Only ERROR messages will be logged. */
-        #define LogError( message )    SdkLog( ( "[ERROR] [%s] "LOG_METADATA_FORMAT, LIBRARY_LOG_NAME, LOG_METADATA_ARGS ) ); SdkLog( message ); SdkLog( ( "\r\n" ) )
-        #define LogWarn( message )
-        #define LogInfo( message )
-        #define LogDebug( message )
+        #define LogError( message, ... )    ESP_LOGE(LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__);
+        #define LogWarn( message, ... )
+        #define LogInfo( message, ... )
+        #define LogDebug( message, ... )
 
     #else /* if LIBRARY_LOG_LEVEL == LOG_ERROR */
 
-        #define LogError( message )
-        #define LogWarn( message )
-        #define LogInfo( message )
-        #define LogDebug( message )
+        #define LogError( message, ... )
+        #define LogWarn( message, ... )
+        #define LogInfo( message, ... )
+        #define LogDebug( message, ... )
 
     #endif /* if LIBRARY_LOG_LEVEL == LOG_ERROR */
 #endif /* if !defined( LIBRARY_LOG_LEVEL ) || ( ( LIBRARY_LOG_LEVEL != LOG_NONE ) && ( LIBRARY_LOG_LEVEL != LOG_ERROR ) && ( LIBRARY_LOG_LEVEL != LOG_WARN ) && ( LIBRARY_LOG_LEVEL != LOG_INFO ) && ( LIBRARY_LOG_LEVEL != LOG_DEBUG ) ) */
