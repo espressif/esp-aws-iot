@@ -1,0 +1,1 @@
+int aws_iot_demo_main( int argc, char ** argv );
