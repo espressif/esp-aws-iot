@@ -120,7 +120,7 @@
 /**
  * @brief Transport timeout in milliseconds for transport send and receive.
  */
-#define TRANSPORT_SEND_RECV_TIMEOUT_MS    ( 20000 )
+#define TRANSPORT_SEND_RECV_TIMEOUT_MS    ( 1500 )
 
 /**
  * @brief The length in bytes of the user buffer.

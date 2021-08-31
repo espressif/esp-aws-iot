@@ -154,7 +154,7 @@ extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
 /**
  * @brief Timeout for MQTT_ProcessLoop function in milliseconds.
  */
-#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 1000U )
+#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 1500U )
 
 /**
  * @brief The maximum time interval in seconds which is allowed to elapse
@@ -170,7 +170,7 @@ extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
 /**
  * @brief Transport timeout in milliseconds for transport send and receive.
  */
-#define TRANSPORT_SEND_RECV_TIMEOUT_MS      ( 20000U )
+#define TRANSPORT_SEND_RECV_TIMEOUT_MS      ( 1500U )
 
 /**
  * @brief The MQTT metrics string expected by AWS IoT.

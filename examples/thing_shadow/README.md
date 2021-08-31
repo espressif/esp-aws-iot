@@ -39,7 +39,7 @@ After flashing the example to your ESP32, it should connect to Amazon and start 
 
 In the ESP32's serial output, you should see the logs every couple of seconds.
 
-```sh
+```
 [INFO] [ShadowDemo] [EstablishMqttSession:683] MQTT connection successfully established with broker.
 [INFO] [ShadowDemo] [EstablishMqttSession:703] An MQTT session with broker is re-established. Resending unacked publishes.
 [INFO] [ShadowDemo] [SubscribeToTopic:795] SUBSCRIBE topic $aws/things/thingname/shadow/delete/accepted to broker.

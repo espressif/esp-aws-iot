@@ -293,7 +293,7 @@ static void deleteRejectedHandler( MQTTPublishInfo_t * pPublishInfo )
      */
 
     /* Make sure the payload is a valid json document. */
-    result = JSON_Validate( pPublishInfo->pPayload,
+    result = JSON_Validate( ( const char * ) pPublishInfo->pPayload,
                             pPublishInfo->payloadLength );
 
     if( result == JSONSuccess )
@@ -367,7 +367,7 @@ static void updateDeltaHandler( MQTTPublishInfo_t * pPublishInfo )
      */
 
     /* Make sure the payload is a valid json document. */
-    result = JSON_Validate( pPublishInfo->pPayload,
+    result = JSON_Validate( ( const char * ) pPublishInfo->pPayload,
                             pPublishInfo->payloadLength );
 
     if( result == JSONSuccess )
@@ -494,7 +494,7 @@ static void updateAcceptedHandler( MQTTPublishInfo_t * pPublishInfo )
      */
 
     /* Make sure the payload is a valid json document. */
-    result = JSON_Validate( pPublishInfo->pPayload,
+    result = JSON_Validate( ( const char * ) pPublishInfo->pPayload,
                             pPublishInfo->payloadLength );
 
     if( result == JSONSuccess )
@@ -809,11 +809,15 @@ int aws_iot_demo_main( int argc,
                                  0x00,
                                  sizeof( updateDocument ) );
 
+                /* Keep the client token in global variable used to compare if
+                 * the same token in /update/accepted. */
+                clientToken = ( Clock_GetTimeMs() % 1000000 );
+
                 snprintf( updateDocument,
                           SHADOW_DESIRED_JSON_LENGTH + 1,
                           SHADOW_DESIRED_JSON,
                           ( int ) 1,
-                          ( long unsigned ) ( Clock_GetTimeMs() % 1000000 ) );
+                          ( long unsigned ) clientToken );
 
                 returnStatus = PublishToTopic( SHADOW_TOPIC_STR_UPDATE( THING_NAME, SHADOW_NAME ),
                                                SHADOW_TOPIC_LEN_UPDATE( THING_NAME_LENGTH, SHADOW_NAME_LENGTH ),
