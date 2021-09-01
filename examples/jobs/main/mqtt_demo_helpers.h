@@ -34,6 +34,11 @@
 #include "tls_freertos.h"
 
 /**
+ * @brief Timeout for MQTT_ProcessLoop in milliseconds.
+ */
+#define mqttexamplePROCESS_LOOP_TIMEOUT_MS           ( 500U )
+
+/**
  * @brief Establish a MQTT connection.
  *
  * @param[in, out] pxMqttContext The memory for the MQTTContext_t that will be used for the

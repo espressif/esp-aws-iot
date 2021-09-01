@@ -40,7 +40,7 @@ After flashing the example to your ESP32, it should connect to Amazon and start 
 
 In the ESP32's serial output, you should see the logs every couple of seconds.
 
-```sh
+```
 [INFO] [MQTT_DEMO] [subscribePublishLoop:1342] Creating an MQTT connection to a2hokgmhoqmk0-ats.iot.us-east-1.amazonaws.com.
 [INFO] [MQTT_DEMO] [establishMqttSession:1111] MQTT connection successfully established with broker.
 

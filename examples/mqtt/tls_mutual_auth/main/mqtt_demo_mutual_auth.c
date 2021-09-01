@@ -249,7 +249,7 @@
 /**
  * @brief Timeout for MQTT_ProcessLoop function in milliseconds.
  */
-#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 500U )
+#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 1500U )
 
 /**
  * @brief The maximum time interval in seconds which is allowed to elapse
@@ -280,7 +280,7 @@
 /**
  * @brief Transport timeout in milliseconds for transport send and receive.
  */
-#define TRANSPORT_SEND_RECV_TIMEOUT_MS      ( 20000U )
+#define TRANSPORT_SEND_RECV_TIMEOUT_MS      ( 1500U )
 
 /**
  * @brief The MQTT metrics string expected by AWS IoT.

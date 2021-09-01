@@ -121,7 +121,7 @@ extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
 /**
  * @brief Transport timeout in milliseconds for transport send and receive.
  */
-#define TRANSPORT_SEND_RECV_TIMEOUT_MS      ( 20000U )
+#define TRANSPORT_SEND_RECV_TIMEOUT_MS      ( 1500U )
 
 /**
  * @brief Timeout for receiving CONNACK packet in milli seconds.
@@ -142,7 +142,7 @@ extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
 /**
  * @brief Timeout for MQTT_ProcessLoop function in milliseconds.
  */
-#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 100U )
+#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 1500U )
 
 /**
  * @brief Maximum number or retries to publish a message in case of failures.

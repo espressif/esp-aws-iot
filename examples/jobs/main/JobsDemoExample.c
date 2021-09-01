@@ -858,7 +858,7 @@ void prvJobsDemoTask( void * pvParameters )
 
             /* Check if we have notification for the next pending job in the queue from the
              * NextJobExecutionChanged API of the AWS IoT Jobs service. */
-            xMqttStatus = MQTT_ProcessLoop( &xMqttContext, 300U );
+            xMqttStatus = MQTT_ProcessLoop( &xMqttContext, mqttexamplePROCESS_LOOP_TIMEOUT_MS );
 
             if( xMqttStatus != MQTTSuccess )
             {

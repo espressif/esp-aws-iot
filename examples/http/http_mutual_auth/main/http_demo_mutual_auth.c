@@ -80,7 +80,7 @@
 
 /* Check that transport timeout for transport send and receive is defined. */
 #ifndef TRANSPORT_SEND_RECV_TIMEOUT_MS
-    #define TRANSPORT_SEND_RECV_TIMEOUT_MS    ( 5000 )
+    #define TRANSPORT_SEND_RECV_TIMEOUT_MS    ( 1500 )
 #endif
 
 /* Check that size of the user buffer is defined. */
