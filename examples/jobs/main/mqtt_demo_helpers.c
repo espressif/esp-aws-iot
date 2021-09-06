@@ -122,7 +122,7 @@
 /**
  * @brief Timeout for MQTT_ProcessLoop in milliseconds.
  */
-#define mqttexamplePROCESS_LOOP_TIMEOUT_MS           ( 500U )
+#define mqttexamplePROCESS_LOOP_TIMEOUT_MS           ( 1500U )
 
 /**
  * @brief Keep alive time reported to the broker while establishing an MQTT connection.
@@ -143,7 +143,7 @@
 /**
  * @brief Transport timeout in milliseconds for transport send and receive.
  */
-#define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 20000U )
+#define mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS    ( 1500U )
 
 /**
  * @brief Maximum number of outgoing publishes maintained in the application
