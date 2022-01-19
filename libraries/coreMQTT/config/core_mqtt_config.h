@@ -2,28 +2,31 @@
 #define COREMQTT_CONFIG_H
 
 #include "sdkconfig.h"
+#define EXTRACT_ARGS( ... ) __VA_ARGS__
+#define STRIP_PARENS( X ) X
+#define REMOVE_PARENS( X ) STRIP_PARENS( EXTRACT_ARGS X )
 
 /* Logging Configurations */
 #if CONFIG_CORE_MQTT_LOG_ERROR || CONFIG_CORE_MQTT_LOG_WARN || CONFIG_CORE_MQTT_LOG_INFO || CONFIG_CORE_MQTT_LOG_DEBUG
-    //#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+    #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
     #include "esp_log.h"
     #define LOGGING_TAG "coreMQTT"
 #endif
 
 #if CONFIG_CORE_MQTT_LOG_ERROR
-    #define LogError( message ) ESP_LOGE( LOGGING_TAG, message, ##__VA_ARGS__ )
+    #define LogError( message, ... ) ESP_LOGE( LOGGING_TAG, REMOVE_PARENS( message ), ##__VA_ARGS__ )
 #endif
 
 #if CONFIG_CORE_MQTT_LOG_WARN
-    #define LogWarn( message ) ESP_LOGW( LOGGING_TAG, message, ##__VA_ARGS__ )
+    #define LogWarn( message, ... ) ESP_LOGW( LOGGING_TAG, REMOVE_PARENS( message ), ##__VA_ARGS__ )
 #endif
 
 #if CONFIG_CORE_MQTT_LOG_INFO
-    #define LogInfo( message ) ESP_LOGI( LOGGING_TAG, message, ##__VA_ARGS__ )
+    #define LogInfo( message, ... ) ESP_LOGI( LOGGING_TAG, REMOVE_PARENS( message ), ##__VA_ARGS__ )
 #endif
 
 #if CONFIG_CORE_MQTT_LOG_DEBUG
-    #define LogDebug( message ) ESP_LOGD( LOGGING_TAG, message, ##__VA_ARGS__ )
+    #define LogDebug( message, ... ) ESP_LOGD( LOGGING_TAG, REMOVE_PARENS( message ), ##__VA_ARGS__ )
 #endif
 
 /* coreMQTT Configurations */
