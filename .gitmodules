@@ -4,3 +4,6 @@
 [submodule "libraries/coreMQTT-Agent/coreMQTT-Agent"]
 	path = libraries/coreMQTT-Agent/coreMQTT-Agent
 	url = https://github.com/FreeRTOS/coreMQTT-Agent.git
+[submodule "libraries/Device-Shadow-for-AWS-IoT-embedded-sdk/Device-Shadow-for-AWS-IoT-embedded-sdk"]
+	path = libraries/Device-Shadow-for-AWS-IoT-embedded-sdk/Device-Shadow-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Device-Shadow-for-AWS-IoT-embedded-sdk.git

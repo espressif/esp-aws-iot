@@ -1,4 +1,30 @@
+#ifndef COREMQTT_CONFIG_H
+#define COREMQTT_CONFIG_H
+
 #include "sdkconfig.h"
+
+/* Logging Configurations */
+#if CONFIG_CORE_MQTT_LOG_ERROR || CONFIG_CORE_MQTT_LOG_WARN || CONFIG_CORE_MQTT_LOG_INFO || CONFIG_CORE_MQTT_LOG_DEBUG
+    #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+    #include "esp_log.h"
+    #define LOGGING_TAG "coreMQTT"
+#endif
+
+#if CONFIG_CORE_MQTT_LOG_ERROR
+    #define LogError( message ) ESP_LOGE( LOGGING_TAG, message )
+#endif
+
+#if CONFIG_CORE_MQTT_LOG_WARN
+    #define LogWarn( message ) ESP_LOGW( LOGGING_TAG, message )
+#endif
+
+#if CONFIG_CORE_MQTT_LOG_INFO
+    #define LogInfo( message ) ESP_LOGI( LOGGING_TAG, message )
+#endif
+
+#if CONFIG_CORE_MQTT_LOG_DEBUG
+    #define LogDebug( message ) ESP_LOGD( LOGGING_TAG, message )
+#endif
 
 /* coreMQTT Configurations */
 #define MQTT_STATE_ARRAY_MAX_COUNT CONFIG_MQTT_STATE_ARRAY_MAX_COUNT
@@ -10,3 +36,5 @@
 /* coreMQTT-Agent Configurations */
 #define MQTT_AGENT_MAX_OUTSTANDING_ACKS CONFIG_MQTT_AGENT_MAX_OUTSTANDING_ACKS
 #define MQTT_AGENT_MAX_EVENT_QUEUE_WAIT_TIME CONFIG_MQTT_AGENT_MAX_EVENT_QUEUE_WAIT_TIME
+
+#endif /* COREMQTT_CONFIG_H */
