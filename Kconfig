@@ -1,164 +1,101 @@
-menu "Amazon Web Services IoT Platform"
+menu "AWS IoT Library Configurations"
 
-config AWS_IOT_MQTT_HOST
-    string "AWS IoT Endpoint Hostname"
-    default ""
-    help
-        Default endpoint host name to connect to AWS IoT MQTT/S gateway
+    menu "coreMQTT"
 
-        This is the custom endpoint hostname and is specific to an AWS
-        IoT account. You can find it by logging into your AWS IoT
-        Console and clicking the Settings button. The endpoint hostname
-        is shown under the "Custom Endpoint" heading on this page.
+        config MQTT_STATE_ARRAY_MAX_COUNT
+            int "Max Incoming/Outgoing Publish Messages Pending ACK"
+            default 10
+            range 0 4294967295
+            help
+                Determines the maximum number of MQTT PUBLISH messages, pending
+                acknowledgment at a time, that are supported for incoming and outgoing
+                direction of messages, separately.
 
-        If you need per-device hostnames for different regions or
-        accounts, you can override the default hostname in your app.
+                QoS 1 and 2 MQTT PUBLISHes require acknowledgment from the server before
+                they can be completed. While they are awaiting the acknowledgment, the
+                client must maintain information about their state. The value of this
+                macro sets the limit on how many simultaneous PUBLISH states an MQTT
+                context maintains, separately, for both incoming and outgoing direction of
+                PUBLISHes.
 
-config AWS_IOT_MQTT_PORT
-    int "AWS IoT MQTT Port"
-    default 8883
-    range 0 65535
-    help
-        Default port number to connect to AWS IoT MQTT/S gateway
+                The MQTT context maintains separate state records for outgoing
+                and incoming PUBLISHes, and thus, 2 * MQTT_STATE_ARRAY_MAX_COUNT amount
+                of memory is statically allocated for the state records.
 
-        If you need per-device port numbers for different regions, you can
-        override the default port number in your app.
+        config MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT
+            int "Max CONNACK Retries"
+            default 5
+            range 0 65535
+            help
+                The number of retries for receiving CONNACK.
 
+                The MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT will be used only when the
+                timeoutMs parameter of #MQTT_Connect is passed as 0 . The transport
+                receive for CONNACK will be retried MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT
+                times before timing out. A value of 0 for this config will cause the
+                transport receive for CONNACK  to be invoked only once.
 
-config AWS_IOT_MQTT_TX_BUF_LEN
-    int "MQTT TX Buffer Length"
-    default 512
-    range 32 131072
-    help
-        Maximum MQTT transmit buffer size. This is the maximum MQTT
-        message length (including protocol overhead) which can be sent.
+        config MQTT_PINGRESP_TIMEOUT_MS
+            int "Ping Response Timeout Milliseconds"
+            default 5000
+            help
+                This can be Any positive integer up to SIZE_MAX.
 
-        Sending longer messages will fail.
+                Maximum number of milliseconds to wait for a ping response to a ping
+                request as part of the keep-alive mechanism.
+                
+                If a ping response is not received before this timeout, then
+                MQTT_ProcessLoop function will return MQTTKeepAliveTimeout.
+                
+                If this value is more than half of the keep alive interval, and the
+                server does not receive the previous ping request, then it is likely that the
+                server will disconnect the client before #MQTTKeepAliveTimeout can be returned.
+                
+                If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
+                is supplied to the library, then the keep-alive mechanism is not supported by the
+                MQTT_ProcessLoop API function. In that case, the value of MQTT_PINGRESP_TIMEOUT_MS
+                is irrelevant to the behavior of the library.
 
-config AWS_IOT_MQTT_RX_BUF_LEN
-    int "MQTT RX Buffer Length"
-    default 512
-    range 32 131072
-    help
-        Maximum MQTT receive buffer size. This is the maximum MQTT
-        message length (including protocol overhead) which can be
-        received.
+        config MQTT_RECV_POLLING_TIMEOUT_MS
+            int "MQTT Packet Receive Polling Timeout"
+            default 10
+            range 0 4294967295
+            help
+                The maximum duration between non-empty network reads while
+                receiving an MQTT packet via the MQTT_ProcessLoop or MQTT_ReceiveLoop
+                API functions.
+                
+                When an incoming MQTT packet is detected, the transport receive function
+                may be called multiple times until all of the expected number of bytes of the
+                packet are received. This timeout represents the maximum polling duration that
+                is allowed without any data reception from the network for the incoming packet.
+                
+                If the timeout expires, the MQTT_ProcessLoop and MQTT_ReceiveLoop functions
+                return MQTTRecvFailed.
+                
+                If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
+                is supplied to the library, then MQTT_RECV_POLLING_TIMEOUT_MS MUST be set to 0.
 
-        Longer messages are dropped.
+        config MQTT_SEND_RETRY_TIMEOUT_MS
+            int "MQTT Send Retry Timeout Milliseconds"
+            default 10
+            range 0 4294967295
+            help
+                The maximum duration between non-empty network transmissions while
+                sending an MQTT packet via the MQTT_ProcessLoop or #MQTT_ReceiveLoop
+                API functions.
+            
+                When sending an MQTT packet, the transport send function may be called multiple
+                times until all of the required number of bytes are sent.
+                This timeout represents the maximum duration that is allowed for no data
+                transmission over the network through the transport send function.
+            
+                If the timeout expires, the MQTT_ProcessLoop and #MQTT_ReceiveLoop functions
+                return #MQTTSendFailed.
+            
+                If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
+                is supplied to the library, then MQTT_SEND_RETRY_TIMEOUT_MS MUST be set to 0.
 
+        endmenu #coreMQTT
 
-config AWS_IOT_MQTT_NUM_SUBSCRIBE_HANDLERS
-    int "Maximum MQTT Topic Filters"
-    default 5
-    range 1 100
-    help
-        Maximum number of concurrent MQTT topic filters.
-
-
-config AWS_IOT_MQTT_MIN_RECONNECT_WAIT_INTERVAL
-    int "Auto reconnect initial interval (ms)"
-    default 1000
-    range 10 3600000
-    help
-        Initial delay before making first reconnect attempt, if the AWS IoT connection fails.
-        Client will perform exponential backoff, starting from this value.
-
-config AWS_IOT_MQTT_MAX_RECONNECT_WAIT_INTERVAL
-    int "Auto reconnect maximum interval (ms)"
-    default 128000
-    range 10 3600000
-    help
-        Maximum delay between reconnection attempts. If the exponentially increased delay
-        interval reaches this value, the client will stop automatically attempting to reconnect.
-
-config AWS_IOT_USE_HARDWARE_SECURE_ELEMENT
-    bool "Use the hardware secure element for authenticating TLS connections"
-    depends on ATCA_MBEDTLS_ECDSA
-    select ATCA_MBEDTLS_ECDSA_SIGN
-    select ATCA_MBEDTLS_ECDSA_VERIFY
-    help
-        Enable this option to use the hardware secure element for the TLS. If you have added the
-        esp-cryptoauthlib (https://github.com/espressif/esp-cryptoauthlib) as a component in your project.
-        This will let the user to specify a slot number from the chip (in the format "#0"
-        where the digit is the slot number to use) which contains the stored private key.
-        Please refer to the component README for more details.
-
-menu "Thing Shadow"
-
-    config AWS_IOT_OVERRIDE_THING_SHADOW_RX_BUFFER
-        bool "Override Shadow RX buffer size"
-        default n
-        help
-            Allows setting a different Thing Shadow RX buffer
-            size. This is the maximum size of a Thing Shadow
-            message in bytes, plus one.
-
-            If not overridden, the default value is the MQTT RX Buffer length plus one. If overriden, do not set
-            higher than the default value.
-
-    config AWS_IOT_SHADOW_MAX_SIZE_OF_RX_BUFFER
-        int "Maximum RX Buffer (bytes)"
-        depends on AWS_IOT_OVERRIDE_THING_SHADOW_RX_BUFFER
-        default 513
-        range 32 65536
-        help
-            Allows setting a different Thing Shadow RX buffer size.
-            This is the maximum size of a Thing Shadow message in bytes,
-            plus one.
-
-
-    config AWS_IOT_SHADOW_MAX_SIZE_OF_UNIQUE_CLIENT_ID_BYTES
-        int "Maximum unique client ID size (bytes)"
-        default 80
-        range 4 1000
-        help
-            Maximum size of the Unique Client Id.
-
-    config AWS_IOT_SHADOW_MAX_SIMULTANEOUS_ACKS
-        int "Maximum simultaneous responses"
-        default 10
-        range 1 100
-        help
-            At any given time we will wait for this many responses. This will correlate to the rate at which the
-            shadow actions are requested
-
-    config AWS_IOT_SHADOW_MAX_SIMULTANEOUS_THINGNAMES
-        int "Maximum simultaneous Thing Name operations"
-        default 10
-        range 1 100
-        help
-            We could perform shadow action on any thing Name and this is maximum Thing Names we can act on at any
-            given time
-
-    config AWS_IOT_SHADOW_MAX_JSON_TOKEN_EXPECTED
-        int "Maximum expected JSON tokens"
-        default 120
-        help
-            These are the max tokens that is expected to be in the Shadow JSON document. Includes the metadata which
-            is published
-
-    config AWS_IOT_SHADOW_MAX_SHADOW_TOPIC_LENGTH_WITHOUT_THINGNAME
-        int "Maximum topic length (not including Thing Name)"
-        default 60
-        range 10 1000
-        help
-            All shadow actions have to be published or subscribed to a topic which is of the format
-            $aws/things/{thingName}/shadow/update/accepted. This refers to the size of the topic without the Thing
-            Name
-
-    config AWS_IOT_SHADOW_MAX_SIZE_OF_THING_NAME
-        int "Maximum Thing Name length"
-        default 20
-        range 4 1000
-        help
-            Maximum length of a Thing Name.
-
-endmenu  # Thing Shadow
-
-config AWS_IOT_SSL_SOCKET_NON_BLOCKING
-    bool "Set socket as non blocking"
-    default n
-    help
-        Allow setting the ssl socket to non blocking mode
-
-endmenu  # AWS IoT
+endmenu #AWS IoT Library Configurations
