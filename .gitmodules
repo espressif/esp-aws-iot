@@ -1,3 +1,6 @@
-[submodule "aws-iot-device-sdk-embedded-C"]
-	path = aws-iot-device-sdk-embedded-C
-	url = https://github.com/espressif/aws-iot-device-sdk-embedded-C.git
+[submodule "libraries/coreMQTT/coreMQTT"]
+	path = libraries/coreMQTT/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT.git
+[submodule "libraries/coreMQTT-Agent/coreMQTT-Agent"]
+	path = libraries/coreMQTT-Agent/coreMQTT-Agent
+	url = https://github.com/FreeRTOS/coreMQTT-Agent.git
