@@ -107,7 +107,7 @@ menu "AWS IoT Library Configurations"
                 default n
 
             config CORE_MQTT_LOG_INFO
-                bool "Enable Error Logging"
+                bool "Enable Info Logging"
                 default y
 
             config CORE_MQTT_LOG_DEBUG
@@ -119,6 +119,7 @@ menu "AWS IoT Library Configurations"
     endmenu # coreMQTT
 
     menu "coreMQTT-Agent"
+    
         config MQTT_AGENT_MAX_OUTSTANDING_ACKS
             int "Max Pending ACKS Per Connection"
             default 10
@@ -129,6 +130,7 @@ menu "AWS IoT Library Configurations"
                 waiting to be acknowledged. MQTT_AGENT_MAX_OUTSTANDING_ACKS set the maximum number 
                 of acknowledgments that can be outstanding at any one time. The higher this number 
                 is the greater the agent's RAM consumption will be.
+
         config MQTT_AGENT_MAX_EVENT_QUEUE_WAIT_TIME
             int "Max Event Queue Wait Time Milliseconds"
             default 1000
@@ -140,6 +142,7 @@ menu "AWS IoT Library Configurations"
                 It is important that MQTT_ProcessLoop() is called often if there is known MQTT 
                 traffic, but calling it too often can take processing time away from lower priority 
                 tasks and waste CPU time and power.
+
     endmenu # coreMQTT-Agent
 
 
