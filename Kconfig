@@ -145,5 +145,17 @@ menu "AWS IoT Library Configurations"
 
     endmenu # coreMQTT-Agent
 
+    menu "Device Defender"
+
+    endmenu # Device Defender
+
+    menu "Device Shadow"
+
+    endmenu # Device Shadow
+
+    menu "OTA"
+
+    endmenu # OTA
+
 
 endmenu # AWS IoT Library Configurations
