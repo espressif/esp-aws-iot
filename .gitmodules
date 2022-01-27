@@ -7,3 +7,12 @@
 [submodule "libraries/Device-Shadow-for-AWS-IoT-embedded-sdk/Device-Shadow-for-AWS-IoT-embedded-sdk"]
 	path = libraries/Device-Shadow-for-AWS-IoT-embedded-sdk/Device-Shadow-for-AWS-IoT-embedded-sdk
 	url = https://github.com/aws/Device-Shadow-for-AWS-IoT-embedded-sdk.git
+[submodule "libraries/backoffAlgorithm/backoffAlgorithm"]
+	path = libraries/backoffAlgorithm/backoffAlgorithm
+	url = https://github.com/FreeRTOS/backoffAlgorithm.git
+[submodule "libraries/Device-Defender-for-AWS-IoT-embedded-sdk/Device-Defender-for-AWS-IoT-embedded-sdk"]
+	path = libraries/Device-Defender-for-AWS-IoT-embedded-sdk/Device-Defender-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Device-Defender-for-AWS-IoT-embedded-sdk.git
+[submodule "libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk"]
+	path = libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk
+	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk.git
