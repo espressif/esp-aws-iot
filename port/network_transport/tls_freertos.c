@@ -147,7 +147,7 @@ int32_t TLS_FreeRTOS_recv( NetworkContext_t * pNetworkContext,
         ( bytesToRecv == 0) ) {
         ESP_LOGE(TAG, "Invalid input parameter(s): Arguments cannot be NULL. pNetworkContext=%p, "
                 "pBuffer=%p, bytesToRecv=%d.", pNetworkContext, pBuffer, bytesToRecv );
-        return TLS_TRANSPORT_INVALID_PARAMETER;
+        return ESP_FAIL;
     }
 
     tlsStatus = esp_transport_read(pNetworkContext->transport, pBuffer, bytesToRecv, pNetworkContext->receiveTimeoutMs);
@@ -171,7 +171,7 @@ int32_t TLS_FreeRTOS_send( NetworkContext_t * pNetworkContext,
         ( bytesToSend == 0) ) {
         ESP_LOGE(TAG, "Invalid input parameter(s): Arguments cannot be NULL. pNetworkContext=%p, "
                 "pBuffer=%p, bytesToSend=%d.", pNetworkContext, pBuffer, bytesToSend );
-        return TLS_TRANSPORT_INVALID_PARAMETER;
+        return ESP_FAIL;
     }
 
     tlsStatus = esp_transport_write(pNetworkContext->transport, pBuffer, bytesToSend, pNetworkContext->sendTimeoutMs);
