@@ -132,7 +132,7 @@ void TLS_FreeRTOS_Disconnect( NetworkContext_t * pNetworkContext )
     esp_transport_close( pNetworkContext->transport );
 
     /* Free TLS contexts. */
-    esp_transport_destroy( pNetworkContext->transport );
+    esp_transport_list_destroy( pNetworkContext->transport_list );
 }
 /*-----------------------------------------------------------*/
 
