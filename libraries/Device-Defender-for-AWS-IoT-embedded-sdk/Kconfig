@@ -1,0 +1,30 @@
+menu "Device Defender"
+
+    config DEFENDER_USE_LONG_KEYS
+        bool "Use long key names."
+        default n
+        help
+            AWS IoT Device Defender Service supports both long and short names for keys
+            in the report sent by a device.
+
+    menu "Logging"
+
+        config DEVICE_DEFENDER_LOG_ERROR
+            bool "Enable Error Logging"
+            default n
+        
+        config DEVICE_DEFENDER_LOG_WARN
+            bool "Enable Warning Logging"
+            default n
+
+        config DEVICE_DEFENDER_LOG_INFO
+            bool "Enable Info Logging"
+            default y
+
+        config DEVICE_DEFENDER_LOG_DEBUG
+            bool "Enable Debug Logging"
+            default n
+
+    endmenu # Logging
+
+endmenu # Device Defender
