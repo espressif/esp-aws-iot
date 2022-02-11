@@ -1,0 +1,122 @@
+menu "coreMQTT"
+
+    config CORE_MQTT_USE_PORT_TRANSPORT_INTERFACE
+        bool "Use included network transport interface port. This adds coreMQTT/port/network_transport files to project."
+        default y
+        help
+            The coreMQTT library requires users define the NetworkContext struct along with a Transport Receive and 
+            Transport Send function that consume the defined NetworkContext struct. Enabling this setting pulls in an implementation
+            that works with ESP-IDF, while leaving this disabled requires the user implement the NetworkContext struct and Transport
+            Receive and Transport Send functions themselves.
+
+    config MQTT_STATE_ARRAY_MAX_COUNT
+        int "Max Incoming/Outgoing Publish Messages Pending ACK"
+        default 10
+        range 0 4294967295
+        help
+            Determines the maximum number of MQTT PUBLISH messages, pending
+            acknowledgment at a time, that are supported for incoming and outgoing
+            direction of messages, separately.
+            QoS 1 and 2 MQTT PUBLISHes require acknowledgment from the server before
+            they can be completed. While they are awaiting the acknowledgment, the
+            client must maintain information about their state. The value of this
+            macro sets the limit on how many simultaneous PUBLISH states an MQTT
+            context maintains, separately, for both incoming and outgoing direction of
+            PUBLISHes.
+            The MQTT context maintains separate state records for outgoing
+            and incoming PUBLISHes, and thus, 2 * MQTT_STATE_ARRAY_MAX_COUNT amount
+            of memory is statically allocated for the state records.
+
+    config MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT
+        int "Max CONNACK Retries"
+        default 5
+        range 0 65535
+        help
+            The number of retries for receiving CONNACK.
+            The MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT will be used only when the
+            timeoutMs parameter of #MQTT_Connect is passed as 0 . The transport
+            receive for CONNACK will be retried MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT
+            times before timing out. A value of 0 for this config will cause the
+            transport receive for CONNACK  to be invoked only once.
+
+    config MQTT_PINGRESP_TIMEOUT_MS
+        int "Ping Response Timeout Milliseconds"
+        default 5000
+        help
+            This can be any positive integer up to SIZE_MAX.
+            Maximum number of milliseconds to wait for a ping response to a ping
+            request as part of the keep-alive mechanism.
+            
+            If a ping response is not received before this timeout, then
+            MQTT_ProcessLoop function will return MQTTKeepAliveTimeout.
+            
+            If this value is more than half of the keep alive interval, and the
+            server does not receive the previous ping request, then it is likely that the
+            server will disconnect the client before #MQTTKeepAliveTimeout can be returned.
+            
+            If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
+            is supplied to the library, then the keep-alive mechanism is not supported by the
+            MQTT_ProcessLoop API function. In that case, the value of MQTT_PINGRESP_TIMEOUT_MS
+            is irrelevant to the behavior of the library.
+
+    config MQTT_RECV_POLLING_TIMEOUT_MS
+        int "MQTT Packet Receive Polling Timeout"
+        default 10
+        range 0 4294967295
+        help
+            The maximum duration between non-empty network reads while
+            receiving an MQTT packet via the MQTT_ProcessLoop or MQTT_ReceiveLoop
+            API functions.
+            
+            When an incoming MQTT packet is detected, the transport receive function
+            may be called multiple times until all of the expected number of bytes of the
+            packet are received. This timeout represents the maximum polling duration that
+            is allowed without any data reception from the network for the incoming packet.
+            
+            If the timeout expires, the MQTT_ProcessLoop and MQTT_ReceiveLoop functions
+            return MQTTRecvFailed.
+            
+            If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
+            is supplied to the library, then MQTT_RECV_POLLING_TIMEOUT_MS MUST be set to 0.
+
+    config MQTT_SEND_RETRY_TIMEOUT_MS
+        int "MQTT Send Retry Timeout Milliseconds"
+        default 10
+        range 0 4294967295
+        help
+            The maximum duration between non-empty network transmissions while
+            sending an MQTT packet via the MQTT_ProcessLoop or #MQTT_ReceiveLoop
+            API functions.
+        
+            When sending an MQTT packet, the transport send function may be called multiple
+            times until all of the required number of bytes are sent.
+            This timeout represents the maximum duration that is allowed for no data
+            transmission over the network through the transport send function.
+        
+            If the timeout expires, the MQTT_ProcessLoop and #MQTT_ReceiveLoop functions
+            return #MQTTSendFailed.
+        
+            If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
+            is supplied to the library, then MQTT_SEND_RETRY_TIMEOUT_MS MUST be set to 0.
+
+    menu "Logging"
+
+        config CORE_MQTT_LOG_ERROR
+            bool "Enable Error Logging"
+            default n
+        
+        config CORE_MQTT_LOG_WARN
+            bool "Enable Warning Logging"
+            default n
+
+        config CORE_MQTT_LOG_INFO
+            bool "Enable Info Logging"
+            default y
+
+        config CORE_MQTT_LOG_DEBUG
+            bool "Enable Debug Logging"
+            default n
+
+    endmenu # Logging
+
+endmenu # coreMQTT

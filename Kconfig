@@ -1,5 +1,14 @@
 menu "AWS IoT Library Configurations"
 
+    config AWS_IOT_USE_NETWORK_TRANSPORT_PORT
+        bool "Use included network transport port."
+        default y
+        help
+            The coreMQTT and coreHTTP libraries require users to define the NetworkContext struct along with a Transport Receive and 
+            Transport Send function that consume the defined NetworkContext struct. Enabling this setting pulls in an implementation
+            that works with ESP-IDF, while leaving this disabled requires the user implement the NetworkContext struct and Transport
+            Receive and Transport Send functions themselves.
+
     menu "coreMQTT"
 
         config MQTT_STATE_ARRAY_MAX_COUNT
