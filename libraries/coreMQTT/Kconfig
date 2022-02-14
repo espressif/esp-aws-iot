@@ -1,14 +1,5 @@
 menu "coreMQTT"
 
-    config CORE_MQTT_USE_PORT_TRANSPORT_INTERFACE
-        bool "Use included network transport interface port. This adds coreMQTT/port/network_transport files to project."
-        default y
-        help
-            The coreMQTT library requires users define the NetworkContext struct along with a Transport Receive and 
-            Transport Send function that consume the defined NetworkContext struct. Enabling this setting pulls in an implementation
-            that works with ESP-IDF, while leaving this disabled requires the user implement the NetworkContext struct and Transport
-            Receive and Transport Send functions themselves.
-
     config MQTT_STATE_ARRAY_MAX_COUNT
         int "Max Incoming/Outgoing Publish Messages Pending ACK"
         default 10
@@ -17,12 +8,14 @@ menu "coreMQTT"
             Determines the maximum number of MQTT PUBLISH messages, pending
             acknowledgment at a time, that are supported for incoming and outgoing
             direction of messages, separately.
+
             QoS 1 and 2 MQTT PUBLISHes require acknowledgment from the server before
             they can be completed. While they are awaiting the acknowledgment, the
             client must maintain information about their state. The value of this
             macro sets the limit on how many simultaneous PUBLISH states an MQTT
             context maintains, separately, for both incoming and outgoing direction of
             PUBLISHes.
+
             The MQTT context maintains separate state records for outgoing
             and incoming PUBLISHes, and thus, 2 * MQTT_STATE_ARRAY_MAX_COUNT amount
             of memory is statically allocated for the state records.
@@ -33,6 +26,7 @@ menu "coreMQTT"
         range 0 65535
         help
             The number of retries for receiving CONNACK.
+
             The MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT will be used only when the
             timeoutMs parameter of #MQTT_Connect is passed as 0 . The transport
             receive for CONNACK will be retried MQTT_MAX_CONNACK_RECEIVE_RETRY_COUNT
@@ -44,6 +38,7 @@ menu "coreMQTT"
         default 5000
         help
             This can be any positive integer up to SIZE_MAX.
+
             Maximum number of milliseconds to wait for a ping response to a ping
             request as part of the keep-alive mechanism.
             
@@ -117,6 +112,6 @@ menu "coreMQTT"
             bool "Enable Debug Logging"
             default n
 
-    endmenu # Logging
+    endmenu # coreMQTT Logging
 
 endmenu # coreMQTT

@@ -16,6 +16,15 @@
 [submodule "libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk"]
 	path = libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk
 	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk.git
+[submodule "libraries/coreJSON/coreJSON"]
+	path = libraries/coreJSON/coreJSON
+	url = https://github.com/FreeRTOS/coreJSON.git
 [submodule "libraries/corePKCS11/corePKCS11"]
 	path = libraries/corePKCS11/corePKCS11
 	url = https://github.com/FreeRTOS/corePKCS11.git
+[submodule "libraries/coreHTTP/coreHTTP"]
+	path = libraries/coreHTTP/coreHTTP
+	url = https://github.com/FreeRTOS/coreHTTP.git
+[submodule "libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk"]
+	path = libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git

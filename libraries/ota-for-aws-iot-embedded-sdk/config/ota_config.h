@@ -1,5 +1,5 @@
 /*
- * AWS IoT Device SDK for Embedded C V202009.00
+ * AWS IoT Device SDK for Embedded C 202103.00
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -36,7 +36,7 @@
 /* Logging configurations */
 #if CONFIG_AWS_OTA_LOG_ERROR || CONFIG_AWS_OTA_LOG_WARN || CONFIG_AWS_OTA_LOG_INFO || CONFIG_AWS_OTA_LOG_DEBUG
 
-    /* Set logging level for the coreMQTT and coreMQTT-Agent components to highest level,
+    /* Set logging level for the AWS_OTA to highest level,
      * so any defined logging level below is printed. */
     #ifdef LOG_LOCAL_LEVEL
         #undef LOG_LOCAL_LEVEL
@@ -44,11 +44,11 @@
     #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
     #include "esp_log.h"
 
-    /* Change LIBRARY_LOG_NAME to "coreMQTT" if defined somewhere else. */
+    /* Change LIBRARY_LOG_NAME to "AWS_OTA" if defined somewhere else. */
     #ifdef LIBRARY_LOG_NAME
         #undef LIBRARY_LOG_NAME
     #endif
-    #define LIBRARY_LOG_NAME "AWS OTA"
+    #define LIBRARY_LOG_NAME "AWS_OTA"
 
 #endif
 
@@ -86,70 +86,78 @@
     #define LogDebug( message, ... ) ESP_LOGD( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
 #endif
 
-/* Include config file used for testing the OTA PAL. This config file defines
- * the otapalconfigCODE_SIGNING_CERTIFICATE macro. */
-//#include "aws_test_ota_config.h"
+/************ End of logging configuration ****************/
 
 /**
  * @brief Log base 2 of the size of the file data block message (excluding the header).
  *
  * 10 bits yields a data block size of 1KB.
  */
-#define otaconfigLOG2_FILE_BLOCK_SIZE           CONFIG_AWS_OTA_LOG2_FILE_BLOCK_SIZE
+#define otaconfigLOG2_FILE_BLOCK_SIZE    CONFIG_LOG2_FILE_BLOCK_SIZE
+
+#define otapalconfigCODE_SIGNING_CERTIFICATE                         \
+"-----BEGIN CERTIFICATE-----\n"                                      \
+"MIIBcDCCARagAwIBAgIUYNy4lAy9AREPtp+bBG0chiEDUQMwCgYIKoZIzj0EAwIw\n" \
+"JTEjMCEGA1UEAwwaZGhhdmFsLmd1amFyQGVzcHJlc3NpZi5jb20wHhcNMjEwNzA2\n" \
+"MTI0MTA5WhcNMjIwNzA2MTI0MTA5WjAlMSMwIQYDVQQDDBpkaGF2YWwuZ3VqYXJA\n" \
+"ZXNwcmVzc2lmLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABI/b7P+Y2c6f\n" \
+"PAD0fC2DCwaAUT/cplFr4AwyYjYk4qlAnBaEbltmukvZKIjkIct7sNEK0rbXSNf1\n" \
+"/QHDWu2hqkmjJDAiMAsGA1UdDwQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAK\n" \
+"BggqhkjOPQQDAgNIADBFAiEA6kjPuxXvyKEnavPC0R2B+uR3nTntrkiszXPuwbMA\n" \
+"CxICIGUnuxeOEx7SAT1O9G6b/k3oNxDf4xjzgHs7dcaSxwAo\n"                 \
+"-----END CERTIFICATE-----"
 
 /**
  * @brief Size of the file data block message (excluding the header).
+ *
  */
 #define otaconfigFILE_BLOCK_SIZE                ( 1UL << otaconfigLOG2_FILE_BLOCK_SIZE )
 
 /**
  * @brief Milliseconds to wait for the self test phase to succeed before we force reset.
  */
-#define otaconfigSELF_TEST_RESPONSE_WAIT_MS     CONFIG_AWS_OTA_SELF_TEST_RESPONSE_WAIT_MS
+#define otaconfigSELF_TEST_RESPONSE_WAIT_MS     60000U
 
 /**
- * @brief Milliseconds to wait before requesting data blocks from the OTA service
- * if nothing is happening.
+ * @brief Milliseconds to wait before requesting data blocks from the OTA service if nothing is happening.
  *
- * The wait timer is reset whenever a data block is received from the OTA
- * service so we will only send the request message after being idle for this
- * amount of time.
+ * The wait timer is reset whenever a data block is received from the OTA service so we will only send
+ * the request message after being idle for this amount of time.
  */
-#define otaconfigFILE_REQUEST_WAIT_MS           CONFIG_AWS_OTA_FILE_REQUEST_WAIT_MS
+#define otaconfigFILE_REQUEST_WAIT_MS           10000U
 
 /**
  * @brief The maximum allowed length of the thing name used by the OTA agent.
  *
- * AWS IoT requires Thing names to be unique for each device that connects to the
- * broker. Likewise, the OTA agent requires the developer to construct and pass
- * in the Thing name when initializing the OTA agent. The agent uses this size to
- * allocate static storage for the Thing name used in all OTA base topics.
- * Namely $aws/things/<thingName>
+ * AWS IoT requires Thing names to be unique for each device that connects to the broker.
+ * Likewise, the OTA agent requires the developer to construct and pass in the Thing name when
+ * initializing the OTA agent. The agent uses this size to allocate static storage for the
+ * Thing name used in all OTA base topics. Namely $aws/things/<thingName>
  */
-#define otaconfigMAX_THINGNAME_LEN              CONFIG_AWS_OTA_MAX_THINGNAME_LEN
+#define otaconfigMAX_THINGNAME_LEN              64U
 
 /**
  * @brief The maximum number of data blocks requested from OTA streaming service.
  *
- * This configuration parameter is sent with data requests and represents the
- * maximum number of data blocks the service will send in response. The maximum
- * limit for this must be calculated from the maximum data response limit (128 KB
- * from service) divided by the block size. For example if block size is set as 1
- * KB then the maximum number of data blocks that we can request is
- * 128/1 = 128 blocks. Configure this parameter to this maximum limit or lower
- * based on how many data blocks response is expected for each data requests.
- * @note This must be set larger than zero.
+ *  This configuration parameter is sent with data requests and represents the maximum number of
+ *  data blocks the service will send in response. The maximum limit for this must be calculated
+ *  from the maximum data response limit (128 KB from service) divided by the block size.
+ *  For example if block size is set as 1 KB then the maximum number of data blocks that we can
+ *  request is 128/1 = 128 blocks. Configure this parameter to this maximum limit or lower based on
+ *  how many data blocks response is expected for each data requests.
+ *  @note This must be set larger than zero.
+ *
  */
-#define otaconfigMAX_NUM_BLOCKS_REQUEST         CONFIG_AWS_OTA_MAX_NUM_BLOCKS_REQUEST
+#define otaconfigMAX_NUM_BLOCKS_REQUEST         CONFIG_MAX_NUM_BLOCKS_REQUEST
 
 /**
- * @brief The maximum number of requests allowed to send without a response before
- * we abort.
+ * @brief The maximum number of requests allowed to send without a response before we abort.
  *
- * This configuration parameter sets the maximum number of times the requests are
- * made over the selected communication channel before aborting and returning error.
+ * This configuration parameter sets the maximum number of times the requests are made over
+ * the selected communication channel before aborting and returning error.
+ *
  */
-#define otaconfigMAX_NUM_REQUEST_MOMENTUM       CONFIG_AWS_OTA_MAX_NUM_REQUEST_MOMENTUM
+#define otaconfigMAX_NUM_REQUEST_MOMENTUM       32U
 
 /**
  * @brief The number of data buffers reserved by the OTA agent.
@@ -157,7 +165,7 @@
  * This configurations parameter sets the maximum number of static data buffers used by
  * the OTA agent for job and file data blocks received.
  */
-#define otaconfigMAX_NUM_OTA_DATA_BUFFERS       otaconfigMAX_NUM_BLOCKS_REQUEST + 1
+#define otaconfigMAX_NUM_OTA_DATA_BUFFERS       CONFIG_MAX_NUM_OTA_DATA_BUFFERS
 
 /**
  * @brief How frequently the device will report its OTA progress to the cloud.
@@ -166,17 +174,17 @@
  * number of blocks it receives. For example, 25 means device will update job status every 25 blocks
  * it receives.
  */
-#define otaconfigOTA_UPDATE_STATUS_FREQUENCY    CONFIG_AWS_OTA_OTA_UPDATE_STATUS_FREQUENCY
+#define otaconfigOTA_UPDATE_STATUS_FREQUENCY    25U
 
 /**
  * @brief Allow update to same or lower version.
  *
- * Set this to 1 to allow downgrade or same version update.This configurations parameter
- * disables version check and allows update to a same or lower version.This is provided for
+ * Set this to 1 to allow downgrade or same version update. This configurations parameter
+ * disables version check and allows update to a same or lower version. This is provided for
  * testing purpose and it is recommended to always update to higher version and keep this
  * configuration disabled.
  */
-#define otaconfigAllowDowngrade                 CONFIG_AWS_OTA_ALLOW_DOWNGRADE
+#define otaconfigAllowDowngrade                 CONFIG_ALLOW_DOWNGRADE
 
 /**
  * @brief The protocol selected for OTA control operations.
@@ -184,12 +192,9 @@
  * This configurations parameter sets the default protocol for all the OTA control
  * operations like requesting OTA job, updating the job status etc.
  *
- * @note Only MQTT is supported at this time for control operations.
+ * Note - Only MQTT is supported at this time for control operations.
  */
-
-#if CONFIG_AWS_OTA_ENABLED_CONTROL_PROTOCOL_MQTT
-    #define configENABLED_CONTROL_PROTOCOL          ( OTA_CONTROL_OVER_MQTT )
-#endif
+#define configENABLED_CONTROL_PROTOCOL          ( OTA_CONTROL_OVER_MQTT )
 
 /**
  * @brief The protocol selected for OTA data operations.
@@ -197,20 +202,23 @@
  * This configurations parameter sets the protocols selected for the data operations
  * like requesting file blocks from the service.
  *
- * @note Both MQTT and HTTP is supported for data transfer. This configuration parameter
+ * Note - Both MQTT and HTTP is supported for data transfer. This configuration parameter
  * can be set to following -
  * Enable data over MQTT - ( OTA_DATA_OVER_MQTT )
  * Enable data over HTTP - ( OTA_DATA_OVER_HTTP)
  * Enable data over both MQTT & HTTP ( OTA_DATA_OVER_MQTT | OTA_DATA_OVER_HTTP )
  */
 
-#if CONFIG_AWS_OTA_ENABLED_DATA_PROTOCOL_HTTP && CONFIG_AWS_OTA_ENABLED_DATA_PROTOCOL_MQTT
-    #define configENABLED_DATA_PROTOCOLS            ( OTA_DATA_OVER_MQTT | OTA_DATA_OVER_HTTP )
-#elif CONFIG_AWS_OTA_ENABLED_DATA_PROTOCOL_HTTP
+#if defined(CONFIG_OTA_DATA_OVER_MQTT) && defined(CONFIG_OTA_DATA_OVER_HTTP)
+    #define configENABLED_DATA_PROTOCOLS ( OTA_DATA_OVER_MQTT | OTA_DATA_OVER_HTTP )
+#elif defined(CONFIG_OTA_DATA_OVER_HTTP)
     #define configENABLED_DATA_PROTOCOLS            ( OTA_DATA_OVER_HTTP )
-#elif CONFIG_AWS_OTA_ENABLED_DATA_PROTOCOL_MQTT
+#elif defined(CONFIG_OTA_DATA_OVER_MQTT)
     #define configENABLED_DATA_PROTOCOLS            ( OTA_DATA_OVER_MQTT )
+#else
+    #warning "No protocol defined for OTA data operations."
 #endif
+    
 /**
  * @brief The preferred protocol selected for OTA data operations.
  *
@@ -218,13 +226,15 @@
  * one protocol is selected while creating OTA job. Default primary data protocol is MQTT
  * and following update here to switch to HTTP as primary.
  *
- * @note Use OTA_DATA_OVER_HTTP for HTTP as primary data protocol.
+ * Note - use OTA_DATA_OVER_HTTP for HTTP as primary data protocol.
  */
 
-#if CONFIG_AWS_OTA_OTA_PRIMARY_DATA_PROTOCOL_MQTT
-    #define configOTA_PRIMARY_DATA_PROTOCOL    ( OTA_DATA_OVER_MQTT )
-#elif CONFIG_AWS_OTA_OTA_PRIMARY_DATA_PROTOCOL_HTTP
-    #define configOTA_PRIMARY_DATA_PROTOCOL    ( OTA_DATA_OVER_HTTP )
+#if defined(CONFIG_OTA_DATA_OVER_MQTT_PRIMARY)
+    #define configOTA_PRIMARY_DATA_PROTOCOL         ( OTA_DATA_OVER_MQTT )
+#elif defined(CONFIG_OTA_DATA_OVER_HTTP_PRIMARY)
+    #define configOTA_PRIMARY_DATA_PROTOCOL         ( OTA_DATA_OVER_HTTP )  
+#else
+    #warning "Primary data protocol for OTA data operations not defined."
 #endif
 
 #endif /* OTA_CONFIG_H_ */

@@ -33,8 +33,8 @@
 #include "esp_ota_ops.h"
 #include "aws_esp_ota_ops.h"
 #include "sys/queue.h"
-//#include "esp32/rom/crc.h"
-//#include "soc/dport_reg.h"
+#include "esp32/rom/crc.h"
+#include "soc/dport_reg.h"
 #include "esp_log.h"
 #include "esp_flash_partitions.h"
 #include "esp_efuse.h"
@@ -53,7 +53,7 @@ static const esp_partition_t *_esp_get_otadata_partition(uint32_t *offset, ota_s
 {
     esp_err_t ret;
     const esp_partition_t *find_partition = NULL;
-    spi_flash_mmap_handle_t ota_data_map;
+    spi_flash_mmap_memory_t ota_data_map;
     const void *result = NULL;
     ota_select s_ota_select[2];
 

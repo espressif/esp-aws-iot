@@ -1,8 +1,8 @@
 /*
  * Copyright 2018 Espressif Systems (Shanghai) PTE LTD
  *
- * FreeRTOS OTA PAL for ESP32-DevKitC ESP-WROVER-KIT V2.0.0
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS OTA PAL for ESP32-DevKitC ESP-WROVER-KIT V1.0.4
+ * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "soc/rtc_cntl_reg.h"
-//#include "soc/rtc_wdt.h"
+#include "soc/rtc_wdt.h"
 
 #include "esp_partition.h"
 #include "esp_spi_flash.h"
@@ -77,18 +77,9 @@ typedef struct
 } esp_sec_boot_sig_t;
 
 static esp_ota_context_t ota_ctx;
+static const char * TAG = "ota_pal";
 
-static const char codeSigningCertificatePEM[] =
-"-----BEGIN CERTIFICATE-----\n"
-"MIIBXzCCAQSgAwIBAgIUJbrZXykcG+i9WVF6i0LmZ3E7ICUwCgYIKoZIzj0EAwIw\n"
-"HDEaMBgGA1UEAwwRY3pqYXNvQGFtYXpvbi5jb20wHhcNMjIwMzAzMTQ1MDQ4WhcN\n"
-"MjMwMzAzMTQ1MDQ4WjAcMRowGAYDVQQDDBFjemphc29AYW1hem9uLmNvbTBZMBMG\n"
-"ByqGSM49AgEGCCqGSM49AwEHA0IABH3yLOJ/VaRtpHVG5FKzyU4JOBn5ir0wMbBY\n"
-"TT8X2rerEqDEGJTFlRiEvhyyCnbRUrLWUV6fBifBYPrbjVjRrSCjJDAiMAsGA1Ud\n"
-"DwQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAKBggqhkjOPQQDAgNJADBGAiEA\n"
-"2Zo/vT+3FJXfS0M086pmREOvN7bBEaJBuH/rGtj2LIoCIQCNIxKISoal5RTcyA9y\n"
-"6ILxKTFIdCtAXhPbF2O6mV7mjA==\n"
-"-----END CERTIFICATE-----";
+static const char codeSigningCertificatePEM[] = otapalconfigCODE_SIGNING_CERTIFICATE;
 
 /* Specify the OTA signature algorithm we support on this platform. */
 const char OTA_JsonFileSignatureKey[ OTA_FILE_SIG_KEY_STR_MAX_LENGTH ] = "sig-sha256-ecdsa";
@@ -380,7 +371,7 @@ uint8_t * otaPal_ReadAndAssumeCertificate( const uint8_t * const pucCertName,
     }
     else
     {
-        LogInfo( ( "No such certificate file: %s. Using certificate in ota_demo_config.h.",
+        LogInfo( ( "No such certificate file: %s. Using certificate in ota_config.h.",
                    ( const char * ) pucCertName ) );
 
         /* Allocate memory for the signer certificate plus a terminating zero so we can copy it and return to the caller. */
@@ -409,7 +400,7 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     uint32_t ulSignerCertSize;
     void * pvSigVerifyContext;
     uint8_t * pucSignerCert = 0;
-    static spi_flash_mmap_handle_t ota_data_map;
+    static spi_flash_mmap_memory_t ota_data_map;
     uint32_t mmu_free_pages_count, len, flash_offset = 0;
 
     /* Verify an ECDSA-SHA256 signature. */
@@ -656,11 +647,11 @@ OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pFileC
     return eImageState;
 }
 
-// static void disable_rtc_wdt()
-// {
-//     LogInfo( ( "Disabling RTC hardware watchdog timer" ) );
-//     rtc_wdt_disable();
-// }
+static void disable_rtc_wdt()
+{
+    LogInfo( ( "Disabling RTC hardware watchdog timer" ) );
+    rtc_wdt_disable();
+}
 
 OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileContext,
                                              OtaImageState_t eState )
@@ -724,7 +715,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileConte
             else
             {
                 /* RTC watchdog timer can now be stopped */
-                // disable_rtc_wdt();
+                disable_rtc_wdt();
             }
         }
         else

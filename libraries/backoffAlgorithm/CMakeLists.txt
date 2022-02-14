@@ -1,22 +1,10 @@
-# This gives BACKOFF_ALGORITHM_INCLUDE_PUBLIC_DIRS, and BACKOFF_ALGORITHM_SOURCES
-include(${CMAKE_CURRENT_LIST_DIR}/backoffAlgorithm/backoffAlgorithmFilePaths.cmake)
-
-set(BACKOFF_ALGORITHM_INCLUDE_DIRS
-    ${BACKOFF_ALGORITHM_INCLUDE_PUBLIC_DIRS}
-)
-
-set(BACKOFF_ALGORITHM_SRCS
-    ${BACKOFF_ALGORITHM_SOURCES}
-)
-
-set(BACKOFF_ALGORITHM_REQUIRES
-)
+# Include backoffAlgorithm library file path configuration.
+include( "${CMAKE_CURRENT_LIST_DIR}/backoffAlgorithm/backoffAlgorithmFilePaths.cmake" )
 
 idf_component_register(
     SRCS
-        ${BACKOFF_ALGORITHM_SRCS}
+        "${BACKOFF_ALGORITHM_SOURCES}"
     INCLUDE_DIRS
-        ${BACKOFF_ALGORITHM_INCLUDE_DIRS}
-    REQUIRES
-        ${BACKOFF_ALGORITHM_REQUIRES}
+        "${BACKOFF_ALGORITHM_INCLUDE_PUBLIC_DIRS}"
+        "."
 )
