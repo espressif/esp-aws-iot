@@ -304,6 +304,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     BackoffAlgorithmContext_t reconnectParams;
     ServerInfo_t serverInfo;
     NetworkCredentials_t *opensslCredentials = (NetworkCredentials_t*) malloc (sizeof (NetworkCredentials_t));
+    (void) memset(opensslCredentials, 0, sizeof (NetworkCredentials_t));
     opensslCredentials->disableSni = 0;
     uint16_t nextRetryBackOff = 0U;
     struct timespec tp;
@@ -318,11 +319,24 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     /* Initialize credentials for establishing TLS session. */
     opensslCredentials->pRootCa = ( const unsigned char * ) root_cert_auth_pem_start;
     opensslCredentials->rootCaSize = root_cert_auth_pem_end - root_cert_auth_pem_start;
+
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    opensslCredentials->pClientCert = NULL;
+    opensslCredentials->pPrivateKey = NULL;
+    opensslCredentials->use_secure_element = true;
+#elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+    opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
+    opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
+    opensslCredentials->pPrivateKey = NULL;
+#error "Populate the ds_data structure and remove this line"
+    /* opensslCredentials->ds_data = DS_DATA; */
+    /* The ds_data can be populated using the API's provided by esp_secure_cert_mgr */
+#else
     opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
     opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
     opensslCredentials->pPrivateKey = ( const unsigned char * ) client_key_pem_start;
     opensslCredentials->privateKeySize = client_key_pem_end - client_key_pem_start;
-
+#endif
     if( AWS_MQTT_PORT == 443 )
     {
         /* Pass the ALPN protocol name depending on the port being used.

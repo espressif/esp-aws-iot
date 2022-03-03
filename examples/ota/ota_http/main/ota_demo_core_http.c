@@ -1312,6 +1312,7 @@ static int32_t connectToS3Server( NetworkContext_t * pNetworkContext,
     TlsTransportStatus_t opensslStatus = TLS_TRANSPORT_SUCCESS;
     /* Credentials to establish the TLS connection. */
     NetworkCredentials_t *opensslCredentials = (NetworkCredentials_t*) malloc (sizeof (NetworkCredentials_t));
+    (void) memset(opensslCredentials, 0, sizeof (NetworkCredentials_t));
     /* Information about the server to send the HTTP requests. */
     ServerInfo_t serverInfo;
     opensslCredentials->disableSni = 0;
@@ -1320,10 +1321,23 @@ static int32_t connectToS3Server( NetworkContext_t * pNetworkContext,
     opensslCredentials->pRootCa = ( const unsigned char * ) http_root_cert_auth_pem_start;
     opensslCredentials->rootCaSize = http_root_cert_auth_pem_end - http_root_cert_auth_pem_start;
 
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    opensslCredentials->pClientCert = NULL;
+    opensslCredentials->pPrivateKey = NULL;
+    opensslCredentials->use_secure_element = true;
+#elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+    opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
+    opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
+    opensslCredentials->pPrivateKey = NULL;
+#error "Populate the ds_data structure and remove this line"
+    /* opensslCredentials->ds_data = DS_DATA; */
+    /* The ds_data can be populated using the API's provided by esp_secure_cert_mgr */
+#else
     opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
     opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
     opensslCredentials->pPrivateKey = ( const unsigned char * ) client_key_pem_start;
     opensslCredentials->privateKeySize = client_key_pem_end - client_key_pem_start;
+#endif
 
     /* Retrieve the address location and length from S3_PRESIGNED_GET_URL. */
     if( pUrl != NULL )

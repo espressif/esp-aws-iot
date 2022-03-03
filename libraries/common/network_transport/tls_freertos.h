@@ -107,6 +107,9 @@ typedef struct NetworkCredentials
     size_t clientCertSize;       /**< @brief Size associated with #NetworkCredentials.pClientCert. */
     const uint8_t * pPrivateKey; /**< @brief String representing the client certificate's private key. */
     size_t privateKeySize;       /**< @brief Size associated with #NetworkCredentials.pPrivateKey. */
+    bool use_secure_element;     /**< @brief Boolean representing the use of secure element
+                                             for the TLS connection. */
+    void *ds_data;               /**< @brief Pointer for digital signature peripheral context */
 } NetworkCredentials_t;
 
 /**

@@ -95,6 +95,18 @@ TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
         esp_transport_ssl_set_client_key_data_der(pNetworkContext->transport, (const char *)pNetworkCredentials->pPrivateKey, pNetworkCredentials->privateKeySize);
     }
 
+#ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
+    if (pNetworkCredentials->use_secure_element) {
+        esp_transport_ssl_use_secure_element(pNetworkContext->transport);
+    }
+#endif
+
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
+    if (pNetworkCredentials->ds_data != NULL) {
+        esp_transport_ssl_set_ds_data(pNetworkContext->transport, pNetworkCredentials->ds_data);
+    }
+#endif
+
     if (esp_transport_connect(pNetworkContext->transport, pHostName, port, receiveTimeoutMs) < 0) {
         returnStatus = TLS_TRANSPORT_CONNECT_FAILURE;
     } else {
