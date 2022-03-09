@@ -16,3 +16,6 @@
 [submodule "libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk"]
 	path = libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk
 	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk.git
+[submodule "libraries/corePKCS11/corePKCS11"]
+	path = libraries/corePKCS11/corePKCS11
+	url = https://github.com/FreeRTOS/corePKCS11.git

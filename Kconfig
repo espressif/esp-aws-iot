@@ -162,9 +162,138 @@ menu "AWS IoT Library Configurations"
 
     endmenu # Device Shadow
 
-    menu "OTA"
+    menu "AWS OTA"
 
-    endmenu # OTA
+        config AWS_OTA_LOG2_FILE_BLOCK_SIZE
+            int "Log base 2 of the size of the file data block message (excluding the header)."
+            default 12
 
+        config AWS_OTA_SELF_TEST_RESPONSE_WAIT_MS
+            int "Self Test Response Wait Time Milliseconds"
+            default 16000
+            help
+                Milliseconds to wait for the self test phase to succeed before we force reset.
+
+        config AWS_OTA_FILE_REQUEST_WAIT_MS
+            int "File Request Wait Time Milliseconds"
+            default 10000
+            help
+                Milliseconds to wait before requesting data blocks from the OTA service
+                if nothing is happening.            
+                The wait timer is reset whenever a data block is received from the OTA
+                service so we will only send the request message after being idle for this
+                amount of time.
+
+        config AWS_OTA_MAX_THINGNAME_LEN
+            int "Max Thingname Length"
+            default 128
+            help
+                The maximum allowed length of the thing name used by the OTA agent.
+                AWS IoT requires Thing names to be unique for each device that connects to the
+                broker. Likewise, the OTA agent requires the developer to construct and pass
+                in the Thing name when initializing the OTA agent. The agent uses this size to
+                allocate static storage for the Thing name used in all OTA base topics.
+                Namely $aws/things/<thingName>
+
+        config AWS_OTA_MAX_NUM_BLOCKS_REQUEST
+            int "Max Number of Blocks Per Request"
+            default 1
+            help 
+                The maximum number of data blocks requested from OTA streaming service.         
+                This configuration parameter is sent with data requests and represents the
+                maximum number of data blocks the service will send in response. The maximum
+                limit for this must be calculated from the maximum data response limit (128 KB
+                from service) divided by the block size. For example if block size is set as 1
+                KB then the maximum number of data blocks that we can request is
+                128/1 = 128 blocks. Configure this parameter to this maximum limit or lower
+                based on how many data blocks response is expected for each data requests.
+                Note: This must be set larger than zero.
+
+        config AWS_OTA_MAX_NUM_REQUEST_MOMENTUM
+            int "Max Number of Requests before Abort"
+            default 32
+            help
+                The maximum number of requests allowed to send without a response before
+                we abort.
+                This configuration parameter sets the maximum number of times the requests are
+                made over the selected communication channel before aborting and returning error.
+
+        config AWS_OTA_OTA_UPDATE_STATUS_FREQUENCY
+            int "Update Status Frequency"
+            default 25
+            help
+                How frequently the device will report its OTA progress to the cloud.
+                Device will update the job status with the number of blocks it has received every certain
+                number of blocks it receives. For example, 25 means device will update job status every 25 blocks
+                it receives.
+
+        config AWS_OTA_ALLOW_DOWNGRADE
+            bool "Allow Downgrade"
+            default n
+            help
+                Allow update to same or lower version.
+                Set this to 1 to allow downgrade or same version update.This configurations parameter
+                disables version check and allows update to a same or lower version.This is provided for
+                testing purpose and it is recommended to always update to higher version and keep this
+                configuration disabled.
+
+        menu "Control Protocol"
+
+            config AWS_OTA_ENABLED_CONTROL_PROTOCOL_MQTT
+            bool "MQTT"
+            default y
+            help
+                The protocol selected for OTA control operations.           
+                This configurations parameter sets the default protocol for all the OTA control
+                operations like requesting OTA job, updating the job status etc.            
+                Note: Only MQTT is supported at this time for control operations.
+
+        endmenu # Control Protocol
+
+        menu "Enabled Data Protocols"
+
+            config AWS_OTA_ENABLED_DATA_PROTOCOL_HTTP
+                bool "HTTP"
+                default n
+
+            config AWS_OTA_ENABLED_DATA_PROTOCOL_MQTT
+                bool "MQTT"
+                default y
+
+        endmenu # Enabled Data Protocols
+
+        choice "Primary Data Protocol"
+
+            prompt "Select Primary Data Protocol"
+
+            config AWS_OTA_OTA_PRIMARY_DATA_PROTOCOL_MQTT
+                bool "MQTT"
+
+            config AWS_OTA_OTA_PRIMARY_DATA_PROTOCOL_HTTP
+                bool "HTTP"
+
+        endchoice # Primary Data Protocol
+
+        menu "Logging"
+
+            config AWS_OTA_LOG_ERROR
+                bool "Enable Error Logging"
+                default n
+
+            config AWS_OTA_LOG_WARN
+                bool "Enable Warning Logging"
+                default n
+
+            config AWS_OTA_LOG_INFO
+                bool "Enable Info Logging"
+                default y
+
+            config AWS_OTA_LOG_DEBUG
+                bool "Enable Debug Logging"
+                default n
+
+        endmenu # Logging
+
+    endmenu # AWS OTA
 
 endmenu # AWS IoT Library Configurations
