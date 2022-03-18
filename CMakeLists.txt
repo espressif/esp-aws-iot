@@ -73,6 +73,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/libraries/corePKCS11/corePKCS11/pkcsFilePaths.
 
 set(COREPKCS_PORT_INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/libraries/corePKCS11/port
+    ${CMAKE_CURRENT_LIST_DIR}/libraries/corePKCS11/corePKCS11/source/dependency/3rdparty/mbedtls_utils
 )
 
 set(COREPKCS_INCLUDE_DIRS

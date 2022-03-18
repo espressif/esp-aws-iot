@@ -1,6 +1,8 @@
 #ifndef ESP_TLS_TRANSPORT_H
 #define ESP_TLS_TRANSPORT_H
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "transport_interface.h"
 #include "esp_tls.h"
 
@@ -18,6 +20,7 @@ typedef enum TlsTransportStatus
 
 struct NetworkContext
 {
+    SemaphoreHandle_t xTlsContextSemaphore;
     esp_tls_t* pxTls;
     const char *pcHostname;
     int xPort;

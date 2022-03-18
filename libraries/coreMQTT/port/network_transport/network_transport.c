@@ -1,3 +1,5 @@
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_tls.h"
 #include "network_transport.h"
@@ -25,6 +27,8 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
     };
 
     esp_tls_t* pxTls = esp_tls_init();
+
+    xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
     pxNetworkContext->pxTls = pxTls;
 
     if (esp_tls_conn_new_sync( pxNetworkContext->pcHostname, 
@@ -35,6 +39,8 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         xRet = TLS_TRANSPORT_CONNECT_FAILURE;
     }
 
+    xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
+
     return xRet;
 }
 
@@ -42,11 +48,15 @@ TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext )
 {
     BaseType_t xRet = TLS_TRANSPORT_SUCCESS;
 
+    xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
     if (pxNetworkContext->pxTls != NULL && 
         esp_tls_conn_destroy(pxNetworkContext->pxTls) < 0)
     {
         xRet = TLS_TRANSPORT_DISCONNECT_FAILURE;
     }
+
+    pxNetworkContext->pxTls = NULL;
+    xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
 
     return xRet;
 }
@@ -56,7 +66,16 @@ int32_t espTlsTransportSend(NetworkContext_t* pxNetworkContext,
 {
     int32_t lBytesSent = 0;
 
-    lBytesSent = esp_tls_conn_write(pxNetworkContext->pxTls, pvData, uxDataLen);
+    if(pxNetworkContext != NULL && pxNetworkContext->pxTls != NULL)
+    {
+        xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
+        lBytesSent = esp_tls_conn_write(pxNetworkContext->pxTls, pvData, uxDataLen);
+        xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
+    }
+    else
+    {
+        lBytesSent = -1;
+    }
 
     return lBytesSent;
 }
@@ -66,7 +85,16 @@ int32_t espTlsTransportRecv(NetworkContext_t* pxNetworkContext,
 {
     int32_t lBytesRead = 0;
 
-    lBytesRead = esp_tls_conn_read(pxNetworkContext->pxTls, pvData, uxDataLen);
+    if(pxNetworkContext != NULL && pxNetworkContext->pxTls != NULL)
+    {
+        xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
+        lBytesRead = esp_tls_conn_read(pxNetworkContext->pxTls, pvData, uxDataLen);
+        xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
+    }
+    else
+    {
+        lBytesRead = -1;
+    }
 
     /* Temporary fix for underlying mbedTLS want read error... connection is still fine. not sure why esp_tls_conn_read returns this error */
     if(lBytesRead == -0x6900)
