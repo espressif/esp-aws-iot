@@ -25,6 +25,7 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
     };
 
     esp_tls_t* pxTls = esp_tls_init();
+    pxNetworkContext->pxTls = pxTls;
 
     if (esp_tls_conn_new_sync( pxNetworkContext->pcHostname, 
             strlen( pxNetworkContext->pcHostname ), 
@@ -32,10 +33,6 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
             &xEspTlsConfig, pxTls) <= 0)
     {
         xRet = TLS_TRANSPORT_CONNECT_FAILURE;
-    }
-    else
-    {
-        pxNetworkContext->pxTls = pxTls;
     }
 
     return xRet;
