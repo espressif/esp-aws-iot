@@ -107,7 +107,7 @@ TlsTransportStatus_t TLS_FreeRTOS_Connect( NetworkContext_t * pNetworkContext,
         if( pNetworkContext != NULL )
         {
             esp_transport_close( pNetworkContext->transport );
-            esp_transport_destroy( pNetworkContext->transport );
+            esp_transport_list_destroy( pNetworkContext->transport_list );
         }
     }
     else
