@@ -1,7 +1,6 @@
 set(COMPONENT_SRCS
 	"app_main.c"
 	"mqtt_demo_mutual_auth.c"
-	"clock_esp.c"
 	)
 
 set(COMPONENT_ADD_INCLUDEDIRS

@@ -1,8 +1,8 @@
 idf_component_register(
     SRCS
-        "tls_freertos.c"
+        "clock_esp.c"
+        "semaphore.c"
     INCLUDE_DIRS
         "."
     REQUIRES
-        tcp_transport
 )

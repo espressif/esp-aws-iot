@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.5)
 set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/examples/common_components/protocol_examples_common"
 						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/backoffAlgorithm"
 						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/coreMQTT"
-						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/common/network_transport"
+						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/common/posix_compat"
 	)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

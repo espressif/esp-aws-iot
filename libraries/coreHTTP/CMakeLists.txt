@@ -5,13 +5,15 @@ idf_component_register(
     SRCS
         "${HTTP_SOURCES}"
         "${HTTP_THIRD_PARTY_SOURCES}"
+        "${CMAKE_CURRENT_LIST_DIR}/port/network_transport/network_transport.c"
     INCLUDE_DIRS
         "${HTTP_INCLUDE_PUBLIC_DIRS}"
         "${CMAKE_CURRENT_LIST_DIR}/../common/logging/"
+        "${CMAKE_CURRENT_LIST_DIR}/port/network_transport"
         "config"
         "."
     REQUIRES
-        network_transport
+        esp-tls
 )
 
 set_source_files_properties(

@@ -2,7 +2,6 @@ set(COMPONENT_SRCS
     "app_main.c"
     "http_demo_mutual_auth.c"
     "http_demo_utils.c"
-    "clock_esp.c"
     )
 
 set(COMPONENT_ADD_INCLUDEDIRS

@@ -1,32 +1,45 @@
-# Set path to corePKCS11 and it's third party libraries.
+# This gives PKCS_INCLUDE_PUBLIC_DIRS, and PKCS_SOURCES
+include(${CMAKE_CURRENT_LIST_DIR}/corePKCS11/pkcsFilePaths.cmake)
 
 set(COREPKCS11_LOCATION "${CMAKE_CURRENT_LIST_DIR}/corePKCS11")
 
 set(CORE_PKCS11_3RDPARTY_LOCATION "${COREPKCS11_LOCATION}/source/dependency/3rdparty")
 
-include( ${COREPKCS11_LOCATION}/pkcsFilePaths.cmake )
+set(COREPKCS_PORT_INCLUDE_DIRS
+    ${CMAKE_CURRENT_LIST_DIR}/port
+    ${CMAKE_CURRENT_LIST_DIR}/../common/logging/
+)
+
+set(COREPKCS_INCLUDE_DIRS
+    ${PKCS_INCLUDE_PUBLIC_DIRS}
+    ${CMAKE_CURRENT_LIST_DIR}/config
+    ${COREPKCS_PORT_INCLUDE_DIRS}
+)
+
+set(COREPKCS_PORT_SRCS
+    ${CMAKE_CURRENT_LIST_DIR}/port/core_pkcs11_pal.c
+    ${CMAKE_CURRENT_LIST_DIR}/port/iot_crypto.c
+)
+
+set(COREPKCS_SRCS
+    ${PKCS_SOURCES}
+    ${COREPKCS_PORT_SRCS}
+)
+
+set(COREPKCS_REQUIRES
+    mbedtls
+    nvs_flash
+    log
+    bootloader_support
+)
 
 idf_component_register(
     SRCS
-        "${CORE_PKCS11_3RDPARTY_LOCATION}/mbedtls_utils/mbedtls_utils.c"
-        # "${CORE_PKCS11_3RDPARTY_LOCATION}/mbedtls_utils/mbedtls_error.c"
-        "${PKCS_SOURCES}"
-        "${COREPKCS11_LOCATION}/source/portable/os/posix/core_pkcs11_pal.c"
-        "${COREPKCS11_LOCATION}/source/portable/os/core_pkcs11_pal_utils.c"
+        ${COREPKCS_SRCS}
     INCLUDE_DIRS
-        "${COREPKCS11_LOCATION}/source/include"
-        "${CMAKE_CURRENT_LIST_DIR}/../common/logging/"
-        "${CORE_PKCS11_3RDPARTY_LOCATION}/pkcs11"
-        "config"
-        "."
+        ${COREPKCS_INCLUDE_DIRS}
     PRIV_INCLUDE_DIRS
-        "${COREPKCS11_LOCATION}/source/portable/os"
-        "${CORE_PKCS11_3RDPARTY_LOCATION}/mbedtls_utils"
+        ${CORE_PKCS11_3RDPARTY_LOCATION}/mbedtls_utils
     REQUIRES
-        mbedtls
-        
+        ${COREPKCS_REQUIRES}
 )
-
-set_source_files_properties(
-"${COREPKCS11_LOCATION}/source/portable/os/posix/core_pkcs11_pal.c"
-PROPERTIES COMPILE_FLAGS -Wno-format)

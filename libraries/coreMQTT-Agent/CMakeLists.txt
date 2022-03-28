@@ -1,5 +1,5 @@
 # This gives MQTT_AGENT_INCLUDE_PUBLIC_DIRS and MQTT_AGENT_SOURCES
-include(${CMAKE_CURRENT_LIST_DIR}coreMQTT-Agent/mqttAgentFilePaths.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/coreMQTT-Agent/mqttAgentFilePaths.cmake)
 
 set(COREMQTT_AGENT_PORT_INCLUDE_DIRS
     ${CMAKE_CURRENT_LIST_DIR}/port

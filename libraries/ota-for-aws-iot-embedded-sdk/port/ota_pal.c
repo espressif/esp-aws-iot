@@ -32,7 +32,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_wdt.h"
+#include "hal/wdt_hal.h"
 
 #include "esp_partition.h"
 #include "esp_spi_flash.h"
@@ -650,7 +650,11 @@ OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pFileC
 static void disable_rtc_wdt()
 {
     LogInfo( ( "Disabling RTC hardware watchdog timer" ) );
-    rtc_wdt_disable();
+
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 }
 
 OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileContext,
@@ -751,6 +755,24 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileConte
     }
 
     return OTA_PAL_COMBINE_ERR( mainErr, 0 );
+}
+
+static const esp_partition_t* get_running_firmware(void)
+{
+    const esp_partition_t *configured = esp_ota_get_boot_partition();
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
+            running->type, running->subtype, running->address);
+    ESP_LOGI(TAG, "Configured partition type %d subtype %d (offset 0x%08x)",
+            configured->type, configured->subtype, configured->address);
+    return running;
+}
+
+esp_err_t otaPal_EraseLastBootPartition(void)
+{
+    const esp_partition_t *cur_app = get_running_firmware();
+    ESP_LOGI(TAG, "Current running firmware is: %s",cur_app->label);
+    return(esp_ota_erase_last_boot_app_partition());
 }
 
 /* Provide access to private members for testing. */

@@ -899,7 +899,6 @@ int aws_iot_demo_main( int argc,
         if( returnStatus == EXIT_SUCCESS )
         {
             LogInfo( ( "Demo iteration %d is successful.", demoRunCount ) );
-            printf(  "Demo iteration %d is successful.\n", demoRunCount );
         }
         /* Attempt to retry a failed iteration of demo for up to #SHADOW_MAX_DEMO_LOOP_COUNT times. */
         else if( demoRunCount < SHADOW_MAX_DEMO_LOOP_COUNT )

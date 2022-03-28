@@ -2,7 +2,6 @@ set(COMPONENT_SRCS
 	"app_main.c"
 	"shadow_demo_main.c"
 	"shadow_demo_helpers.c"
-	"clock_esp.c"
 	)
 
 set(COMPONENT_ADD_INCLUDEDIRS

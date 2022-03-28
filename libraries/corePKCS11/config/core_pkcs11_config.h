@@ -35,28 +35,72 @@
 
 #include "freertos/FreeRTOS.h"
 
-/**************************************************/
-/******* DO NOT CHANGE the following order ********/
-/**************************************************/
+#include "sdkconfig.h"
+#define EXTRACT_ARGS( ... ) __VA_ARGS__
+#define STRIP_PARENS( X ) X
+#define REMOVE_PARENS( X ) STRIP_PARENS( EXTRACT_ARGS X )
 
-/* Include logging header files and define logging macros in the following order:
- * 1. Include the header file "logging_levels.h".
- * 2. Define the LIBRARY_LOG_NAME and LIBRARY_LOG_LEVEL macros depending on
- * the logging configuration for PKCS #11.
- * 3. Include the header file "logging_stack.h", if logging is enabled for PKCS #11.
- */
-#include "logging_levels.h"
+/* Logging configurations */
+#if CONFIG_CORE_PKCS_LOG_ERROR || CONFIG_CORE_PKCS_LOG_WARN || CONFIG_CORE_PKCS_LOG_INFO || CONFIG_CORE_PKCS_LOG_DEBUG
 
-/* Logging configuration for the PKCS #11 library. */
-#ifndef LIBRARY_LOG_NAME
-    #define LIBRARY_LOG_NAME    "PKCS11"
+    /* Set logging level for the coreMQTT and coreMQTT-Agent components to highest level,
+     * so any defined logging level below is printed. */
+    #ifdef LOG_LOCAL_LEVEL
+        #undef LOG_LOCAL_LEVEL
+    #endif
+    #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+    #include "esp_log.h"
+
+    /* Change LIBRARY_LOG_NAME to "corePKCS11" if defined somewhere else. */
+    #ifdef LIBRARY_LOG_NAME
+        #undef LIBRARY_LOG_NAME
+    #endif
+    #define LIBRARY_LOG_NAME "corePKCS11"
+
 #endif
 
-#ifndef LIBRARY_LOG_LEVEL
-    #define LIBRARY_LOG_LEVEL    LOG_ERROR
+/* Undefine logging macros if they were defined somewhere else like another AWS/FreeRTOS library. */
+#ifdef LogError
+    #undef LogError
 #endif
 
-#include "logging_stack.h"
+#ifdef LogWarn
+    #undef LogWarn
+#endif
+
+#ifdef LogInfo
+    #undef LogInfo
+#endif
+
+#ifdef LogDebug
+    #undef LogDebug
+#endif
+
+/* Define logging macros based on configurations in sdkconfig.h. */
+#if CONFIG_CORE_PKCS_LOG_ERROR
+    #define LogError( message, ... ) ESP_LOGE( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogError( message, ... )
+#endif
+
+#if CONFIG_CORE_PKCS_LOG_WARN
+    #define LogWarn( message, ... ) ESP_LOGW( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogWarn( message, ... )
+#endif
+
+#if CONFIG_CORE_PKCS_LOG_INFO
+    #define LogInfo( message, ... ) ESP_LOGI( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogInfo( message, ... )
+#endif
+
+#if CONFIG_CORE_PKCS_LOG_DEBUG
+    #define LogDebug( message, ... ) ESP_LOGD( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogDebug( message, ... )
+#endif
+
 
 /**
  * @brief Malloc API used by core_pkcs11.h
@@ -90,7 +134,7 @@
  * Note: Do not cast this to a pointer! The library calls sizeof to get the length
  * of this string.
  */
-#define configPKCS11_DEFAULT_USER_PIN                       "0000"
+#define configPKCS11_DEFAULT_USER_PIN                      "0000"
 
 /**
  * @brief Maximum length (in characters) for a PKCS #11 CKA_LABEL

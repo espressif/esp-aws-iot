@@ -37,22 +37,22 @@
 /* HTTP API header. */
 #include "core_http_client.h"
 
-/* OpenSSL transport header. */
-#include "tls_freertos.h"
+/* Transport interface implementation include header for TLS. */
+#include "network_transport.h"
        
 #ifndef ROOT_CA_PEM
-    extern const uint8_t root_cert_auth_pem_start[] asm("_binary_root_cert_auth_pem_start");
-    extern const uint8_t root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
+    extern const char root_cert_auth_pem_start[] asm("_binary_root_cert_auth_pem_start");
+    extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
 #endif
 
 /* Check that a path for the client certificate is defined. */
 #ifndef CLIENT_CERTIFICATE_PEM
-        extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
-        extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
+        extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
+        extern const char client_cert_pem_end[] asm("_binary_client_crt_end");
 #endif
 #ifndef CLIENT_PRIVATE_KEY_PEM
-        extern const uint8_t client_key_pem_start[] asm("_binary_client_key_start");
-        extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
+        extern const char client_key_pem_start[] asm("_binary_client_key_start");
+        extern const char client_key_pem_end[] asm("_binary_client_key_end");
 #endif
 
 /**
@@ -143,52 +143,44 @@ static int32_t sendHttpRequest( const TransportInterface_t * pTransportInterface
 static int32_t connectToServer( NetworkContext_t * pNetworkContext )
 {
     int32_t returnStatus = EXIT_FAILURE;
-    /* Status returned by OpenSSL transport implementation. */
-    TlsTransportStatus_t opensslStatus;
-    /* Credentials to establish the TLS connection. */
-    NetworkCredentials_t *opensslCredentials = (NetworkCredentials_t*) malloc (sizeof (NetworkCredentials_t));
-    /* Information about the server to send the HTTP requests. */
-    ServerInfo_t serverInfo;
 
-    (void) memset(opensslCredentials, 0, sizeof (NetworkCredentials_t));
+    /* Status returned by transport implementation. */
+    TlsTransportStatus_t tlsStatus;
+
     /* Initialize TLS credentials. */
+    pNetworkContext->pcHostname = AWS_IOT_ENDPOINT;
+    pNetworkContext->xPort = AWS_HTTPS_PORT;
+    pNetworkContext->pxTls = NULL;
+    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
 
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    opensslCredentials->pClientCert = NULL;
-    opensslCredentials->pPrivateKey = NULL;
-    opensslCredentials->use_secure_element = true;
+    pNetworkContext->pcClientCertPem = NULL;
+    pNetworkContext->pcClientKeyPem = NULL;
+    pNetworkContext->use_secure_element = true;
 #elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
-    opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
-    opensslCredentials->pPrivateKey = NULL;
+    pNetworkContext->pcClientCertPem = client_cert_pem_start;
+    pNetworkContext->pcClientKeyPem = NULL;
 #error "Populate the ds_data structure and remove this line"
-    /* opensslCredentials->ds_data = DS_DATA; */
+    /* pNetworkContext->ds_data = DS_DATA; */
     /* The ds_data can be populated using the API's provided by esp_secure_cert_mgr */
 #else
-    opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
-    opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
-    opensslCredentials->pPrivateKey = ( const unsigned char * ) client_key_pem_start;
-    opensslCredentials->privateKeySize = client_key_pem_end - client_key_pem_start;
+    pNetworkContext->pcClientCertPem = client_cert_pem_start;
+    pNetworkContext->pcClientKeyPem = client_key_pem_start;
+
 #endif
-    opensslCredentials->pRootCa = ( const unsigned char * ) root_cert_auth_pem_start;
-    opensslCredentials->rootCaSize = root_cert_auth_pem_end - root_cert_auth_pem_start;
-    opensslCredentials->disableSni = 0;
+    pNetworkContext->pcServerRootCAPem = root_cert_auth_pem_start;
+    pNetworkContext->disableSni = 0;
 
     /* ALPN is required when communicating to AWS IoT Core over port 443 through HTTP. */
     if( AWS_HTTPS_PORT == 443 )
     {
         static const char * pcAlpnProtocols[] = { NULL, NULL };
         pcAlpnProtocols[0] = IOT_CORE_ALPN_PROTOCOL_NAME;
-        opensslCredentials->pAlpnProtos = pcAlpnProtocols;
+        pNetworkContext->pAlpnProtos = pcAlpnProtocols;
 
     } else {
-         opensslCredentials->pAlpnProtos = NULL;
+         pNetworkContext->pAlpnProtos = NULL;
     }
-
-    /* Initialize server information. */
-    serverInfo.pHostName = AWS_IOT_ENDPOINT;
-    serverInfo.hostNameLength = AWS_IOT_ENDPOINT_LENGTH;
-    serverInfo.port = AWS_HTTPS_PORT;
 
     /* Establish a TLS session with the HTTP server. This example connects
      * to the HTTP server as specified in AWS_IOT_ENDPOINT and AWS_HTTPS_PORT
@@ -197,14 +189,9 @@ static int32_t connectToServer( NetworkContext_t * pNetworkContext )
                ( int32_t ) AWS_IOT_ENDPOINT_LENGTH,
                AWS_IOT_ENDPOINT,
                AWS_HTTPS_PORT ) );
-    opensslStatus = TLS_FreeRTOS_Connect ( pNetworkContext,
-                                            serverInfo.pHostName,
-                                            serverInfo.port,
-                                            opensslCredentials,
-                                            TRANSPORT_SEND_RECV_TIMEOUT_MS,
-                                            TRANSPORT_SEND_RECV_TIMEOUT_MS );
+    tlsStatus = xTlsConnect ( pNetworkContext );
 
-    if( opensslStatus == TLS_TRANSPORT_SUCCESS )
+    if( tlsStatus == TLS_TRANSPORT_SUCCESS )
     {
         returnStatus = EXIT_SUCCESS;
     }
@@ -348,7 +335,7 @@ int aws_iot_demo_main( int argc,
     /* The transport layer interface used by the HTTP Client library. */
     TransportInterface_t transportInterface;
     /* The network context for the transport layer interface. */
-    NetworkContext_t networkContext;
+    NetworkContext_t networkContext = {0};
 
     ( void ) argc;
     ( void ) argv;
@@ -384,8 +371,8 @@ int aws_iot_demo_main( int argc,
     if( returnStatus == EXIT_SUCCESS )
     {
         ( void ) memset( &transportInterface, 0, sizeof( transportInterface ) );
-        transportInterface.recv = TLS_FreeRTOS_recv;
-        transportInterface.send = TLS_FreeRTOS_send;
+        transportInterface.recv = espTlsTransportRecv;
+        transportInterface.send = espTlsTransportSend;
         transportInterface.pNetworkContext = &networkContext;
     }
 
@@ -409,7 +396,7 @@ int aws_iot_demo_main( int argc,
     /************************** Disconnect. *****************************/
 
     /* End TLS session, then close TCP connection. */
-    ( void ) TLS_FreeRTOS_Disconnect( &networkContext );
+    ( void ) xTlsDisconnect( &networkContext );
 
     return returnStatus;
 }

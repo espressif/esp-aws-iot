@@ -67,7 +67,7 @@
 #include "core_mqtt_state.h"
 
 /* OpenSSL sockets transport implementation. */
-#include "tls_freertos.h"
+#include "network_transport.h"
 
 /*Include backoff algorithm header for retry logic.*/
 #include "backoff_algorithm.h"
@@ -82,11 +82,11 @@
 
 #ifndef ROOT_CA_PEM
     #if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
-    static const uint8_t root_cert_auth_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
+    static const char root_cert_auth_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
     #else
-    extern const uint8_t root_cert_auth_pem_start[]   asm("_binary_root_cert_auth_pem_start");
+    extern const char root_cert_auth_pem_start[]   asm("_binary_root_cert_auth_pem_start");
     #endif
-    extern const uint8_t root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
+    extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
 #endif
 
 #ifndef CLIENT_IDENTIFIER
@@ -105,12 +105,12 @@
  */
 
     #ifndef CLIENT_CERTIFICATE_PEM
-        extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
-        extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
+        extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
+        extern const char client_cert_pem_end[] asm("_binary_client_crt_end");
     #endif
     #ifndef CLIENT_PRIVATE_KEY_PEM
-        extern const uint8_t client_key_pem_start[] asm("_binary_client_key_start");
-        extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
+        extern const char client_key_pem_start[] asm("_binary_client_key_start");
+        extern const char client_key_pem_end[] asm("_binary_client_key_end");
     #endif
 #else
 
@@ -542,42 +542,36 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
 {
     int returnStatus = EXIT_SUCCESS;
     BackoffAlgorithmStatus_t backoffAlgStatus = BackoffAlgorithmSuccess;
-    TlsTransportStatus_t opensslStatus = TLS_TRANSPORT_SUCCESS;
+    TlsTransportStatus_t tlsStatus = TLS_TRANSPORT_SUCCESS;
     BackoffAlgorithmContext_t reconnectParams;
-    ServerInfo_t serverInfo;
-    NetworkCredentials_t *opensslCredentials = (NetworkCredentials_t*) malloc (sizeof (NetworkCredentials_t));
-    (void) memset(opensslCredentials, 0, sizeof (NetworkCredentials_t));
-    opensslCredentials->disableSni = 0;
+
+    pNetworkContext->pcHostname = AWS_IOT_ENDPOINT;
+    pNetworkContext->xPort = AWS_MQTT_PORT;
+    pNetworkContext->pxTls = NULL;
+    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
+
+    pNetworkContext->disableSni = 0;
     uint16_t nextRetryBackOff;
 
-    /* Initialize information to connect to the MQTT broker. */
-    serverInfo.pHostName = AWS_IOT_ENDPOINT;
-    serverInfo.hostNameLength = AWS_IOT_ENDPOINT_LENGTH;
-    serverInfo.port = AWS_MQTT_PORT;
-
     /* Initialize credentials for establishing TLS session. */
-    opensslCredentials->pRootCa = ( const unsigned char * ) root_cert_auth_pem_start;
-    opensslCredentials->rootCaSize = root_cert_auth_pem_end - root_cert_auth_pem_start;
+    pNetworkContext->pcServerRootCAPem = root_cert_auth_pem_start;
 
     /* If #CLIENT_USERNAME is defined, username/password is used for authenticating
      * the client. */
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    opensslCredentials->pClientCert = NULL;
-    opensslCredentials->pPrivateKey = NULL;
-    opensslCredentials->use_secure_element = true;
+    pNetworkContext->pcClientCertPem = NULL;
+    pNetworkContext->pcClientKeyPem = NULL;
+    pNetworkContext->use_secure_element = true;
 #elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
-    opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
-    opensslCredentials->pPrivateKey = NULL;
+    pNetworkContext->pcClientCertPem = client_cert_pem_start;
+    pNetworkContext->pcClientKeyPem = NULL;
 #error "Populate the ds_data structure and remove this line"
-    /* opensslCredentials->ds_data = DS_DATA; */
+    /* pNetworkContext->ds_data = DS_DATA; */
     /* The ds_data can be populated using the API's provided by esp_secure_cert_mgr */
 #else
     #ifndef CLIENT_USERNAME
-        opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
-        opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
-        opensslCredentials->pPrivateKey = ( const unsigned char * ) client_key_pem_start;
-        opensslCredentials->privateKeySize = client_key_pem_end - client_key_pem_start;
+        pNetworkContext->pcClientCertPem = client_cert_pem_start;
+        pNetworkContext->pcClientKeyPem = client_key_pem_start;
     #endif
 #endif
     /* AWS IoT requires devices to send the Server Name Indication (SNI)
@@ -607,9 +601,9 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
             pcAlpnProtocols[0] = AWS_IOT_MQTT_ALPN;
         #endif
 
-        opensslCredentials->pAlpnProtos = pcAlpnProtocols;
+        pNetworkContext->pAlpnProtos = pcAlpnProtocols;
     } else {
-        opensslCredentials->pAlpnProtos = NULL;
+        pNetworkContext->pAlpnProtos = NULL;
     }
 
     /* Initialize reconnect attempts and interval */
@@ -631,14 +625,9 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
                    AWS_IOT_ENDPOINT_LENGTH,
                    AWS_IOT_ENDPOINT,
                    AWS_MQTT_PORT ) );
-        opensslStatus = TLS_FreeRTOS_Connect ( pNetworkContext,
-                                            serverInfo.pHostName,
-                                            serverInfo.port,
-                                            opensslCredentials,
-                                            TRANSPORT_SEND_RECV_TIMEOUT_MS,
-                                            TRANSPORT_SEND_RECV_TIMEOUT_MS );
+        tlsStatus = xTlsConnect ( pNetworkContext );
 
-        if( opensslStatus != TLS_TRANSPORT_SUCCESS )
+        if( tlsStatus != TLS_TRANSPORT_SUCCESS )
         {
             /* Generate a random number and get back-off value (in milliseconds) for the next connection retry. */
             backoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &reconnectParams, generateRandomNumber(), &nextRetryBackOff );
@@ -656,7 +645,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
                 Clock_SleepMs( nextRetryBackOff );
             }
         }
-    } while( ( opensslStatus != TLS_TRANSPORT_SUCCESS ) && ( backoffAlgStatus == BackoffAlgorithmSuccess ) );
+    } while( ( tlsStatus != TLS_TRANSPORT_SUCCESS ) && ( backoffAlgStatus == BackoffAlgorithmSuccess ) );
 
     return returnStatus;
 }
@@ -1285,8 +1274,8 @@ static int initializeMqtt( MQTTContext_t * pMqttContext,
      * For this demo, TCP sockets are used to send and receive data
      * from network. Network context is SSL context for OpenSSL.*/
     transport.pNetworkContext = pNetworkContext;
-    transport.send = TLS_FreeRTOS_send;
-    transport.recv = TLS_FreeRTOS_recv;
+    transport.send = espTlsTransportSend;
+    transport.recv = espTlsTransportRecv;
 
     /* Fill the values for network buffer. */
     networkBuffer.pBuffer = buffer;
@@ -1523,7 +1512,7 @@ int aws_iot_demo_main( int argc,
 {
     int returnStatus = EXIT_SUCCESS;
     MQTTContext_t mqttContext = { 0 };
-    NetworkContext_t networkContext = { 0 };
+    NetworkContext_t xNetworkContext = { 0 };
     bool clientSessionPresent = false;
     struct timespec tp;
 
@@ -1540,7 +1529,7 @@ int aws_iot_demo_main( int argc,
 
     /* Initialize MQTT library. Initialization of the MQTT library needs to be
      * done only once in this demo. */
-    returnStatus = initializeMqtt( &mqttContext, &networkContext );
+    returnStatus = initializeMqtt( &mqttContext, &xNetworkContext );
 
     if( returnStatus == EXIT_SUCCESS )
     {
@@ -1551,8 +1540,7 @@ int aws_iot_demo_main( int argc,
              * attempts are reached or maximum timeout value is reached. The function
              * returns EXIT_FAILURE if the TCP connection cannot be established to
              * broker after configured number of attempts. */
-            returnStatus = connectToServerWithBackoffRetries( &networkContext );
-
+            returnStatus = connectToServerWithBackoffRetries( &xNetworkContext );
             if( returnStatus == EXIT_FAILURE )
             {
                 /* Log error to indicate connection failure after all
@@ -1574,7 +1562,7 @@ int aws_iot_demo_main( int argc,
             }
 
             /* End TLS session, then close TCP connection. */
-            ( void ) TLS_FreeRTOS_Disconnect( &networkContext );
+            ( void ) xTlsDisconnect( &xNetworkContext );
 
             LogInfo( ( "Short delay before starting the next iteration....\n" ) );
             sleep( MQTT_SUBPUB_LOOP_DELAY_SECONDS );

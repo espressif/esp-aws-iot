@@ -57,7 +57,7 @@
 #include "backoff_algorithm.h"
 
 /* Transport interface implementation include header for TLS. */
-#include "tls_freertos.h"
+#include "network_transport.h"
 
 /*------------- Demo configurations -------------------------*/
 
@@ -68,17 +68,17 @@
  */
 
 #ifndef democonfigROOT_CA_PEM
-    extern const uint8_t root_cert_auth_pem_start[]   asm("_binary_root_cert_auth_pem_start");
-    extern const uint8_t root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
+    extern const char root_cert_auth_pem_start[]   asm("_binary_root_cert_auth_pem_start");
+    extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
 #endif
 #ifndef democonfigCLIENT_PRIVATE_KEY_PEM
-   extern const uint8_t client_key_pem_start[] asm("_binary_client_key_start");
-        extern const uint8_t client_key_pem_end[] asm("_binary_client_key_end");
+    extern const char client_key_pem_start[] asm("_binary_client_key_start");
+    extern const char client_key_pem_end[] asm("_binary_client_key_end");
 #endif
 
 #ifndef democonfigCLIENT_CERTIFICATE_PEM
-   extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
-    extern const uint8_t client_cert_pem_end[] asm("_binary_client_crt_end");
+    extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
+    extern const char client_cert_pem_end[] asm("_binary_client_crt_end");
 #endif
 
 /*-----------------------------------------------------------*/
@@ -329,8 +329,11 @@ static TlsTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext
     TlsTransportStatus_t xNetworkStatus = TLS_TRANSPORT_SUCCESS;
     BackoffAlgorithmStatus_t xBackoffAlgStatus = BackoffAlgorithmSuccess;
     BackoffAlgorithmContext_t xReconnectParams = { 0 };
-    NetworkCredentials_t xNetworkCredentials = { 0 };
     uint16_t usNextRetryBackOff = 0U;
+    pxNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
+
+    pxNetworkContext->pcHostname = democonfigMQTT_BROKER_ENDPOINT;
+    pxNetworkContext->xPort = democonfigMQTT_BROKER_PORT;
 
     /* ALPN protocols must be a NULL-terminated list of strings. Therefore,
      * the first entry will contain the actual ALPN protocol string while the
@@ -340,15 +343,29 @@ static TlsTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext
     configASSERT( pxNetworkContext != NULL );
 
     /* Set the credentials for establishing a TLS connection. */
-    xNetworkCredentials.pRootCa = ( const unsigned char * ) root_cert_auth_pem_start;
-    xNetworkCredentials.rootCaSize = root_cert_auth_pem_end - root_cert_auth_pem_start;
-    xNetworkCredentials.pClientCert = ( const unsigned char * ) client_cert_pem_start;
-    xNetworkCredentials.clientCertSize = client_cert_pem_end - client_cert_pem_start;
-    xNetworkCredentials.pPrivateKey = ( const unsigned char * ) client_key_pem_start;
-    xNetworkCredentials.privateKeySize = client_key_pem_end - client_key_pem_start;
+    pxNetworkContext->pcServerRootCAPem = root_cert_auth_pem_start;
 
-    xNetworkCredentials.disableSni = 0;
-    
+    pxNetworkContext->disableSni = 0;
+
+    #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+        pxNetworkContext->pcClientCertPem = NULL;
+        pxNetworkContext->pcClientKeyPem = NULL;
+        pxNetworkContext->use_secure_element = true;
+    #elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+        pxNetworkContext->pcClientCertPem = client_cert_pem_start;
+        pxNetworkContext->pcClientKeyPem = NULL;
+    #error "Populate the ds_data structure and remove this line"
+        /* pxNetworkContext->ds_data = DS_DATA; */
+        /* The ds_data can be populated using the API's provided by esp_secure_cert_mgr */
+    #else
+        #ifndef democonfigCLIENT_USERNAME
+            pxNetworkContext->pcClientCertPem = client_cert_pem_start;
+            pxNetworkContext->pcClientKeyPem = client_key_pem_start;
+        #endif
+    #endif
+
+
+
     if( democonfigMQTT_BROKER_PORT == 443 )
     {
         /* Pass the ALPN protocol name depending on the port being used.
@@ -368,9 +385,9 @@ static TlsTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext
             pcAlpnProtocols[0] = AWS_IOT_MQTT_ALPN;
         #endif
 
-        xNetworkCredentials.pAlpnProtos = pcAlpnProtocols;
+        pxNetworkContext->pAlpnProtos = pcAlpnProtocols;
     } else {
-        xNetworkCredentials.pAlpnProtos = NULL;
+        pxNetworkContext->pAlpnProtos = NULL;
     }
 
     /* Initialize reconnect attempts and interval.*/
@@ -391,12 +408,7 @@ static TlsTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext
         LogInfo( ( "Create a TCP connection to %s:%d.",
                    democonfigMQTT_BROKER_ENDPOINT,
                    democonfigMQTT_BROKER_PORT ) );
-        xNetworkStatus = TLS_FreeRTOS_Connect( pxNetworkContext,
-                                               democonfigMQTT_BROKER_ENDPOINT,
-                                               democonfigMQTT_BROKER_PORT,
-                                               &xNetworkCredentials,
-                                               mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS,
-                                               mqttexampleTRANSPORT_SEND_RECV_TIMEOUT_MS );
+        xNetworkStatus = xTlsConnect( pxNetworkContext );
 
         if( xNetworkStatus != TLS_TRANSPORT_SUCCESS )
         {
@@ -613,8 +625,8 @@ BaseType_t xEstablishMqttSession( MQTTContext_t * pxMqttContext,
     {
         /* Fill in Transport Interface send and receive function pointers. */
         xTransport.pNetworkContext = pxNetworkContext;
-        xTransport.send = TLS_FreeRTOS_send;
-        xTransport.recv = TLS_FreeRTOS_recv;
+        xTransport.send = espTlsTransportSend;
+        xTransport.recv = espTlsTransportRecv;
 
         /* Initialize MQTT library. */
         xMQTTStatus = MQTT_Init( pxMqttContext,
@@ -750,7 +762,7 @@ BaseType_t xDisconnectMqttSession( MQTTContext_t * pxMqttContext,
     }
 
     /* Close the network connection.  */
-    TLS_FreeRTOS_Disconnect( pxNetworkContext );
+    xTlsDisconnect( pxNetworkContext );
 
     return xReturnStatus;
 }

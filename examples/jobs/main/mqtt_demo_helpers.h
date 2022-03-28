@@ -31,7 +31,7 @@
 #include "core_mqtt.h"
 
 /* Transport interface implementation include header for TLS. */
-#include "tls_freertos.h"
+#include "network_transport.h"
 
 /**
  * @brief Timeout for MQTT_ProcessLoop in milliseconds.

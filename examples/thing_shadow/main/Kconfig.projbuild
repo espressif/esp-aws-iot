@@ -38,7 +38,8 @@ menu "Example Configuration"
         prompt "Choose PKI credentials access method"
         default EXAMPLE_USE_PLAIN_FLASH_STORAGE
         help
-            ESP devices support multiple ways to secure store the PKI credentials. Currently Secure Element (ATECC608A) and DS peripheral are supported.
+            ESP devices support multiple ways to secure store the PKI credentials.
+            Currently Secure Element (ATECC608A) and DS peripheral are supported.
             The default behaviour is to access the PKI credentials which are embedded in the binary.
             Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
 
@@ -60,7 +61,8 @@ menu "Example Configuration"
         config EXAMPLE_USE_PLAIN_FLASH_STORAGE
         bool "Use flash storage (default)"
         help
-            This option expects the Private key and Device certificate to be embedded in the binary. This is the default behaviour.
+            This option expects the Private key and Device certificate to be embedded in the binary.
+            This is the default behaviour.
     endchoice
 
 endmenu

@@ -45,7 +45,7 @@
 #include <unistd.h>
 
 /* OpenSSL sockets transport implementation. */
-#include "tls_freertos.h"
+#include "network_transport.h"
 
 /*Include backoff algorithm header for retry logic.*/
 #include "backoff_algorithm.h"
@@ -59,16 +59,16 @@
  */
 
 #ifndef ROOT_CA_CERT_PATH
-    extern const uint8_t root_cert_auth_pem_start[] asm("_binary_root_cert_auth_pem_start");
-    extern const uint8_t root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
+    extern const char root_cert_auth_pem_start[] asm("_binary_root_cert_auth_pem_start");
+    extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
 #endif
 #ifndef CLIENT_CERT_PATH
-    extern const uint8_t client_cert_pem_start[] asm("_binary_client_crt_start");
-    extern const uint8_t client_cert_pem_end[]   asm("_binary_client_crt_end");
+    extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
+    extern const char client_cert_pem_end[]   asm("_binary_client_crt_end");
 #endif
 #ifndef CLIENT_PRIVATE_KEY_PATH
-    extern const uint8_t client_key_pem_start[] asm("_binary_client_key_start");
-    extern const uint8_t client_key_pem_end[]   asm("_binary_client_key_end");
+    extern const char client_key_pem_start[] asm("_binary_client_key_start");
+    extern const char client_key_pem_end[]   asm("_binary_client_key_end");
 #endif
 
 /**
@@ -300,42 +300,33 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
 {
     int returnStatus = EXIT_SUCCESS;
     BackoffAlgorithmStatus_t backoffAlgStatus = BackoffAlgorithmSuccess;
-    TlsTransportStatus_t opensslStatus = TLS_TRANSPORT_SUCCESS;
+    TlsTransportStatus_t tlsStatus = TLS_TRANSPORT_SUCCESS;
     BackoffAlgorithmContext_t reconnectParams;
-    ServerInfo_t serverInfo;
-    NetworkCredentials_t *opensslCredentials = (NetworkCredentials_t*) malloc (sizeof (NetworkCredentials_t));
-    (void) memset(opensslCredentials, 0, sizeof (NetworkCredentials_t));
-    opensslCredentials->disableSni = 0;
-    uint16_t nextRetryBackOff = 0U;
+    pNetworkContext->pcHostname = AWS_IOT_ENDPOINT;
+    pNetworkContext->xPort = AWS_MQTT_PORT;
+    pNetworkContext->pxTls = NULL;
+    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
+
+    pNetworkContext->disableSni = 0;
+    uint16_t nextRetryBackOff;
     struct timespec tp;
 
-    /* Set the pParams member of the network context with desired transport. */
-
-    /* Initialize information to connect to the MQTT broker. */
-    serverInfo.pHostName = AWS_IOT_ENDPOINT;
-    serverInfo.hostNameLength = AWS_IOT_ENDPOINT_LENGTH;
-    serverInfo.port = AWS_MQTT_PORT;
-
     /* Initialize credentials for establishing TLS session. */
-    opensslCredentials->pRootCa = ( const unsigned char * ) root_cert_auth_pem_start;
-    opensslCredentials->rootCaSize = root_cert_auth_pem_end - root_cert_auth_pem_start;
+    pNetworkContext->pcServerRootCAPem = root_cert_auth_pem_start;
 
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    opensslCredentials->pClientCert = NULL;
-    opensslCredentials->pPrivateKey = NULL;
-    opensslCredentials->use_secure_element = true;
+    pNetworkContext->pcClientCertPem = NULL;
+    pNetworkContext->pcClientKeyPem = NULL;
+    pNetworkContext->use_secure_element = true;
 #elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
-    opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
-    opensslCredentials->pPrivateKey = NULL;
+    pNetworkContext->pcClientCertPem = client_cert_pem_start;
+    pNetworkContext->pcClientKeyPem = NULL;
 #error "Populate the ds_data structure and remove this line"
-    /* opensslCredentials->ds_data = DS_DATA; */
+    /* pNetworkContext->ds_data = DS_DATA; */
     /* The ds_data can be populated using the API's provided by esp_secure_cert_mgr */
 #else
-    opensslCredentials->pClientCert = ( const unsigned char * ) client_cert_pem_start;
-    opensslCredentials->clientCertSize = client_cert_pem_end - client_cert_pem_start;
-    opensslCredentials->pPrivateKey = ( const unsigned char * ) client_key_pem_start;
-    opensslCredentials->privateKeySize = client_key_pem_end - client_key_pem_start;
+    pNetworkContext->pcClientCertPem = client_cert_pem_start;
+    pNetworkContext->pcClientKeyPem = client_key_pem_start;
 #endif
     if( AWS_MQTT_PORT == 443 )
     {
@@ -346,9 +337,9 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
          */
         static const char * pcAlpnProtocols[] = { NULL, NULL };
         pcAlpnProtocols[0] = ALPN_PROTOCOL_NAME;
-        opensslCredentials->pAlpnProtos = pcAlpnProtocols;
+        pNetworkContext->pAlpnProtos = pcAlpnProtocols;
     } else {
-        opensslCredentials->pAlpnProtos = NULL;
+        pNetworkContext->pAlpnProtos = NULL;
     }
 
     /* Seed pseudo random number generator used in the demo for
@@ -379,14 +370,9 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
                    AWS_IOT_ENDPOINT_LENGTH,
                    AWS_IOT_ENDPOINT,
                    AWS_MQTT_PORT ) );
-        opensslStatus = TLS_FreeRTOS_Connect ( pNetworkContext,
-                                            serverInfo.pHostName,
-                                            serverInfo.port,
-                                            opensslCredentials,
-                                            TRANSPORT_SEND_RECV_TIMEOUT_MS,
-                                            TRANSPORT_SEND_RECV_TIMEOUT_MS );
+        tlsStatus = xTlsConnect ( pNetworkContext );
 
-        if( opensslStatus != TLS_TRANSPORT_SUCCESS )
+        if( tlsStatus != TLS_TRANSPORT_SUCCESS )
         {
             /* Generate a random number and get back-off value (in milliseconds) for the next connection retry. */
             backoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &reconnectParams, generateRandomNumber(), &nextRetryBackOff );
@@ -404,7 +390,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
                 Clock_SleepMs( nextRetryBackOff );
             }
         }
-    } while( ( opensslStatus != TLS_TRANSPORT_SUCCESS ) && ( backoffAlgStatus == BackoffAlgorithmSuccess ) );
+    } while( ( tlsStatus != TLS_TRANSPORT_SUCCESS ) && ( backoffAlgStatus == BackoffAlgorithmSuccess ) );
 
     return returnStatus;
 }
@@ -569,7 +555,7 @@ static int handlePublishResend( MQTTContext_t * pMqttContext )
 
 /*-----------------------------------------------------------*/
 
-int EstablishMqttSession( MQTTEventCallback_t eventCallback )
+int32_t EstablishMqttSession( MQTTEventCallback_t eventCallback )
 {
     int returnStatus = EXIT_SUCCESS;
     MQTTStatus_t mqttStatus;
@@ -604,8 +590,8 @@ int EstablishMqttSession( MQTTEventCallback_t eventCallback )
          * For this demo, TCP sockets are used to send and receive data
          * from network. Network context is SSL context for OpenSSL.*/
         transport.pNetworkContext = pNetworkContext;
-        transport.send = TLS_FreeRTOS_send;
-        transport.recv = TLS_FreeRTOS_recv;
+        transport.send = espTlsTransportSend;
+        transport.recv = espTlsTransportRecv;
 
         /* Fill the values for network buffer. */
         networkBuffer.pBuffer = buffer;
@@ -733,7 +719,7 @@ int32_t DisconnectMqttSession( void )
     }
 
     /* End TLS session, then close TCP connection. */
-    ( void ) TLS_FreeRTOS_Disconnect( pNetworkContext );
+    ( void ) xTlsDisconnect( pNetworkContext );
 
     return returnStatus;
 }

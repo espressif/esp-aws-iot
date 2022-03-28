@@ -32,6 +32,7 @@
 #define OTA_PAL_H_
 
 #include "ota.h"
+#include "esp_err.h"
 
 /**
  * @brief Abort an OTA transfer.
@@ -208,5 +209,13 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileConte
  *   NOTE: OtaPalImageStateUnknown should NEVER be returned and indicates an implementation error.
  */
 OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pFileContext );
+
+/**
+ * @brief Erase previous boot app partition and corresponding otadata select for this partition.
+ *
+ * @return
+ *        - ESP_OK:   Successful, otherwise ESP_ERR.
+ */
+esp_err_t otaPal_EraseLastBootPartition(void);
 
 #endif /* ifndef OTA_PAL_H_ */

@@ -2,7 +2,6 @@ set(COMPONENT_SRCS
 	"app_main.c"
 	"JobsDemoExample.c"
 	"mqtt_demo_helpers.c"
-	"clock_esp.c"
 	)
 
 set(COMPONENT_ADD_INCLUDEDIRS
