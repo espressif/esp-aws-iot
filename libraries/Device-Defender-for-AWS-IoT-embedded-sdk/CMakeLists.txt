@@ -1,0 +1,24 @@
+# This gives DEFENDER_INCLUDE_PUBLIC_DIRS, and DEFENDER_SOURCES
+include(${CMAKE_CURRENT_LIST_DIR}/Device-Defender-for-AWS-IoT-embedded-sdk/defenderFilePaths.cmake)
+
+
+set(DEVICE_DEFENDER_INCLUDE_DIRS
+    ${DEFENDER_INCLUDE_PUBLIC_DIRS}
+    ${CMAKE_CURRENT_LIST_DIR}/config
+)
+
+set(DEVICE_DEFENDER_SRCS
+    ${DEFENDER_SOURCES}
+)
+
+set(DEVICE_DEFENDER_REQUIRES
+)
+
+idf_component_register(
+    SRCS
+        ${DEVICE_DEFENDER_SRCS}
+    INCLUDE_DIRS
+        ${DEVICE_DEFENDER_INCLUDE_DIRS}
+    REQUIRES
+        ${DEVICE_DEFENDER_REQUIRES}
+)

@@ -1,0 +1,23 @@
+menu "corePKCS11"
+
+    menu "Logging"
+
+        config CORE_PKCS_LOG_ERROR
+            bool "Enable Error Logging"
+            default n
+        
+        config CORE_PKCS_LOG_WARN
+            bool "Enable Warning Logging"
+            default n
+
+        config CORE_PKCS_LOG_INFO
+            bool "Enable Info Logging"
+            default y
+
+        config CORE_PKCS_LOG_DEBUG
+            bool "Enable Debug Logging"
+            default n
+
+    endmenu # Logging
+
+endmenu # corePKCS11

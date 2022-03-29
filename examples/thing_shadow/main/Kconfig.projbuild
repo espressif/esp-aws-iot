@@ -1,66 +1,68 @@
 menu "Example Configuration"
 
-    config WIFI_SSID
-        string "WiFi SSID"
-        default "myssid"
+    config MQTT_CLIENT_IDENTIFIER
+        string "The MQTT client identifier used in this example. Also used as Thing Name"
+        default "testClient"
         help
-            SSID (network name) for the example to connect to.
+            The MQTT client identifier used in this example. Each client identifier must be unique.
+            so edit as required to ensure that no two clients connecting to the same broker use the same client identifier.
 
-    config WIFI_PASSWORD
-        string "WiFi Password"
-        default "mypassword"
+    config MQTT_BROKER_ENDPOINT
+        string "Endpoint of the MQTT broker to connect to"
+        default "test.mosquitto.org"
         help
-            WiFi password (WPA or WPA2) for the example to use.
+            This example can be run with any MQTT broker, that supports server authentication.
 
-            Can be left blank if the network has no security set.
-
-    config AWS_EXAMPLE_CLIENT_ID
-        string "AWS IoT Client ID"
-        default "myesp32"
+    config MQTT_BROKER_PORT
+        int "Port of the MQTT broker use"
+        default 8883
         help
-            AWS IoT Client ID for the example. Should be unique for every device.
+            In general, port 8883 is for secured MQTT connections.
+            Port 443 requires use of the ALPN TLS extension with the ALPN protocol name.
+            When using port 8883, ALPN is not required.
 
-    config AWS_EXAMPLE_THING_NAME
-        string "AWS IoT Thing Name"
-        default "myesp32"
+    config HARDWARE_PLATFORM_NAME
+        string "The hardware platform"
+        default "ESP32"
         help
-            AWS IoT Thing Name for the example. Should be unique for every device.
+            The name of the hardware platform the application is running on.
 
-    choice EXAMPLE_CERT_SOURCE
-        prompt "AWS IoT Certificate Source"
-        default EXAMPLE_EMBEDDED_CERTS
+    config MQTT_NETWORK_BUFFER_SIZE
+        int "Size of the network buffer for MQTT packets"
+        range 1024 2048
+        default 1024
         help
-            AWS IoT requires loading of a device-specific certificate and private key,
-            and a common Root CA Certificate. These can be compiled into the example
-            app, or they can be loaded via the filesystem from an SD card.
+            Size of the network buffer for MQTT packets.
 
-        config EXAMPLE_EMBEDDED_CERTS
-            bool "Embed into app"
-        config EXAMPLE_SDCARD_CERTS
-            bool "Load from SD card"
-            select EXAMPLE_FILESYSTEM_CERTS
+    choice EXAMPLE_CHOOSE_PKI_ACCESS_METHOD
+        prompt "Choose PKI credentials access method"
+        default EXAMPLE_USE_PLAIN_FLASH_STORAGE
+        help
+            ESP devices support multiple ways to secure store the PKI credentials.
+            Currently Secure Element (ATECC608A) and DS peripheral are supported.
+            The default behaviour is to access the PKI credentials which are embedded in the binary.
+            Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
+
+        config EXAMPLE_USE_SECURE_ELEMENT
+        bool "Use secure element (ATECC608A)"
+        depends on ESP_TLS_USE_SECURE_ELEMENT
+        help
+            Enable the use of secure element for the example.
+            The esp-cryptoauthlib component is required for enabling
+            this option.
+
+        config EXAMPLE_USE_DS_PERIPHERAL
+        bool "Use DS peripheral"
+        depends on ESP_TLS_USE_DS_PERIPHERAL
+        help
+            Enable the use of DS peripheral for the example.
+            The DS peripheral on the device must be provisioned first to use this option.
+
+        config EXAMPLE_USE_PLAIN_FLASH_STORAGE
+        bool "Use flash storage (default)"
+        help
+            This option expects the Private key and Device certificate to be embedded in the binary.
+            This is the default behaviour.
     endchoice
-
-    # Currently this is equivalent to EXAMPLE_SDCARD_CERTS,
-    # however eventually we want to support more filesystem
-    # sources (SPIFFS, etc.) So this hidden config item
-    # is selected whenever the item should load from filesystem.
-    config EXAMPLE_FILESYSTEM_CERTS
-        bool
-
-    config EXAMPLE_CERTIFICATE_PATH
-        string "Device Certificate Path"
-        depends on EXAMPLE_FILESYSTEM_CERTS
-        default "/sdcard/certificate.pem.crt"
-
-    config EXAMPLE_PRIVATE_KEY_PATH
-        string "Device Private Key Path"
-        depends on EXAMPLE_FILESYSTEM_CERTS
-        default "/sdcard/private.pem.key"
-
-    config EXAMPLE_ROOT_CA_PATH
-        string "Root CA Certificate Path"
-        depends on EXAMPLE_FILESYSTEM_CERTS
-        default "/sdcard/aws-root-ca.pem"
 
 endmenu

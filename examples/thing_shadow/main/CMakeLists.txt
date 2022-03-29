@@ -1,11 +1,15 @@
-set(COMPONENT_SRCS "thing_shadow_sample.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(COMPONENT_SRCS
+	"app_main.c"
+	"shadow_demo_main.c"
+	"shadow_demo_helpers.c"
+	)
 
+set(COMPONENT_ADD_INCLUDEDIRS
+	"."
+	"${CMAKE_CURRENT_LIST_DIR}"
+	"${PROJECT_DIR}/../../libraries/common/logging/"
+	)
 
-register_component()
-
-if(CONFIG_EXAMPLE_EMBEDDED_CERTS)
-target_add_binary_data(${COMPONENT_TARGET} "certs/aws-root-ca.pem" TEXT)
-target_add_binary_data(${COMPONENT_TARGET} "certs/certificate.pem.crt" TEXT)
-target_add_binary_data(${COMPONENT_TARGET} "certs/private.pem.key" TEXT)
-endif()
+idf_component_register(SRCS "${COMPONENT_SRCS}"
+					   INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS}
+					  )

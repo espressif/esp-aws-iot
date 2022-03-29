@@ -1,0 +1,49 @@
+menu "Example Configuration"
+
+    config AWS_IOT_ENDPOINT
+        string "AWS IoT Core endpoint to connect to"
+
+    config AWS_HTTPS_PORT
+        int "AWS IoT Core server port number for HTTPS connections"
+        default 8443
+        help
+            Port 443 requires use of the ALPN TLS extension with the ALPN protocol name.
+            When using port 8443, ALPN is not required.
+
+    config HARDWARE_PLATFORM_NAME
+        string "The hardware platform"
+        default "ESP32"
+        help
+            The name of the hardware platform the application is running on.
+
+    choice EXAMPLE_CHOOSE_PKI_ACCESS_METHOD
+        prompt "Choose PKI credentials access method"
+        default EXAMPLE_USE_PLAIN_FLASH_STORAGE
+        help
+            ESP devices support multiple ways to secure store the PKI credentials.
+            Currently Secure Element (ATECC608A) and DS peripheral are supported.
+            The default behaviour is to access the PKI credentials which are embedded in the binary.
+            Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
+
+        config EXAMPLE_USE_SECURE_ELEMENT
+        bool "Use secure element (ATECC608A)"
+        depends on ESP_TLS_USE_SECURE_ELEMENT
+        help
+            Enable the use of secure element for the example.
+            The esp-cryptoauthlib component is required for enabling
+            this option.
+
+        config EXAMPLE_USE_DS_PERIPHERAL
+        bool "Use DS peripheral"
+        depends on ESP_TLS_USE_DS_PERIPHERAL
+        help
+            Enable the use of DS peripheral for the example.
+            The DS peripheral on the device must be provisioned first to use this option.
+
+        config EXAMPLE_USE_PLAIN_FLASH_STORAGE
+        bool "Use flash storage (default)"
+        help
+            This option expects the Private key and Device certificate to be embedded in the binary.
+            This is the default behaviour.
+    endchoice
+endmenu

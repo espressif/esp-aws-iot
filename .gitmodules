@@ -1,3 +1,30 @@
-[submodule "aws-iot-device-sdk-embedded-C"]
-	path = aws-iot-device-sdk-embedded-C
-	url = https://github.com/espressif/aws-iot-device-sdk-embedded-C.git
+[submodule "libraries/coreMQTT/coreMQTT"]
+	path = libraries/coreMQTT/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT.git
+[submodule "libraries/coreMQTT-Agent/coreMQTT-Agent"]
+	path = libraries/coreMQTT-Agent/coreMQTT-Agent
+	url = https://github.com/FreeRTOS/coreMQTT-Agent.git
+[submodule "libraries/Device-Shadow-for-AWS-IoT-embedded-sdk/Device-Shadow-for-AWS-IoT-embedded-sdk"]
+	path = libraries/Device-Shadow-for-AWS-IoT-embedded-sdk/Device-Shadow-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Device-Shadow-for-AWS-IoT-embedded-sdk.git
+[submodule "libraries/backoffAlgorithm/backoffAlgorithm"]
+	path = libraries/backoffAlgorithm/backoffAlgorithm
+	url = https://github.com/FreeRTOS/backoffAlgorithm.git
+[submodule "libraries/Device-Defender-for-AWS-IoT-embedded-sdk/Device-Defender-for-AWS-IoT-embedded-sdk"]
+	path = libraries/Device-Defender-for-AWS-IoT-embedded-sdk/Device-Defender-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Device-Defender-for-AWS-IoT-embedded-sdk.git
+[submodule "libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk"]
+	path = libraries/ota-for-aws-iot-embedded-sdk/ota-for-aws-iot-embedded-sdk
+	url = https://github.com/aws/ota-for-aws-iot-embedded-sdk.git
+[submodule "libraries/coreJSON/coreJSON"]
+	path = libraries/coreJSON/coreJSON
+	url = https://github.com/FreeRTOS/coreJSON.git
+[submodule "libraries/corePKCS11/corePKCS11"]
+	path = libraries/corePKCS11/corePKCS11
+	url = https://github.com/FreeRTOS/corePKCS11.git
+[submodule "libraries/coreHTTP/coreHTTP"]
+	path = libraries/coreHTTP/coreHTTP
+	url = https://github.com/FreeRTOS/coreHTTP.git
+[submodule "libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk"]
+	path = libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
