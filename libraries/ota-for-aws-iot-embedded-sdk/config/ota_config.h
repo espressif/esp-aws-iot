@@ -93,19 +93,7 @@
  *
  * 10 bits yields a data block size of 1KB.
  */
-#define otaconfigLOG2_FILE_BLOCK_SIZE    CONFIG_LOG2_FILE_BLOCK_SIZE
-
-#define otapalconfigCODE_SIGNING_CERTIFICATE                         \
-"-----BEGIN CERTIFICATE-----\n"                                      \
-"MIIBcDCCARagAwIBAgIUYNy4lAy9AREPtp+bBG0chiEDUQMwCgYIKoZIzj0EAwIw\n" \
-"JTEjMCEGA1UEAwwaZGhhdmFsLmd1amFyQGVzcHJlc3NpZi5jb20wHhcNMjEwNzA2\n" \
-"MTI0MTA5WhcNMjIwNzA2MTI0MTA5WjAlMSMwIQYDVQQDDBpkaGF2YWwuZ3VqYXJA\n" \
-"ZXNwcmVzc2lmLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABI/b7P+Y2c6f\n" \
-"PAD0fC2DCwaAUT/cplFr4AwyYjYk4qlAnBaEbltmukvZKIjkIct7sNEK0rbXSNf1\n" \
-"/QHDWu2hqkmjJDAiMAsGA1UdDwQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAK\n" \
-"BggqhkjOPQQDAgNIADBFAiEA6kjPuxXvyKEnavPC0R2B+uR3nTntrkiszXPuwbMA\n" \
-"CxICIGUnuxeOEx7SAT1O9G6b/k3oNxDf4xjzgHs7dcaSxwAo\n"                 \
-"-----END CERTIFICATE-----"
+#define otaconfigLOG2_FILE_BLOCK_SIZE           CONFIG_LOG2_FILE_BLOCK_SIZE
 
 /**
  * @brief Size of the file data block message (excluding the header).

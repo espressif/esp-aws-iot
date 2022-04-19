@@ -16,16 +16,16 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         .clientcert_bytes = strlen( pxNetworkContext->pcClientCertPem ) + 1,
         .skip_common_name = pxNetworkContext->disableSni,
         .alpn_protos = pxNetworkContext->pAlpnProtos,
-#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+#if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
         .use_secure_element = true,
-#endif /* CONFIG_EXAMPLE_USE_SECURE_ELEMENT */
-#ifdef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+#elif CONFIG_ESP_TLS_USE_DS_PERIPHERAL
         .ds_data = pxNetworkContext->ds_data,
 #else
+        .use_secure_element = false,
         .ds_data = NULL,
         .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKeyPem ),
         .clientkey_bytes = strlen( pxNetworkContext->pcClientKeyPem ) + 1,
-#endif /* CONFIG_EXAMPLE_USE_DS_PERIPHERAL */
+#endif
         .timeout_ms = 3000,
     };
 
