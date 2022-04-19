@@ -337,6 +337,11 @@ static uint8_t buffer[ NETWORK_BUFFER_SIZE ];
  */
 static MQTTSubAckStatus_t globalSubAckStatus = MQTTSubAckFailure;
 
+/**
+ * @brief Static buffer for TLS Context Semaphore.
+ */
+static StaticSemaphore_t xTlsContextSemaphoreBuffer;
+
 /*-----------------------------------------------------------*/
 
 int aws_iot_demo_main( int argc, char ** argv );
@@ -548,7 +553,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     pNetworkContext->pcHostname = AWS_IOT_ENDPOINT;
     pNetworkContext->xPort = AWS_MQTT_PORT;
     pNetworkContext->pxTls = NULL;
-    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
+    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutexStatic(&xTlsContextSemaphoreBuffer);
 
     pNetworkContext->disableSni = 0;
     uint16_t nextRetryBackOff;

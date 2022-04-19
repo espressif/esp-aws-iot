@@ -39,6 +39,11 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
             pxNetworkContext->xPort, 
             &xEspTlsConfig, pxTls) <= 0)
     {
+        if (pxNetworkContext->pxTls)
+        {
+            esp_tls_conn_destroy(pxNetworkContext->pxTls);
+            pxNetworkContext->pxTls = NULL;
+        }
         xRet = TLS_TRANSPORT_CONNECT_FAILURE;
     }
 
@@ -57,7 +62,6 @@ TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext )
     {
         xRet = TLS_TRANSPORT_DISCONNECT_FAILURE;
     }
-
     pxNetworkContext->pxTls = NULL;
     xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
 
@@ -67,6 +71,11 @@ TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext )
 int32_t espTlsTransportSend(NetworkContext_t* pxNetworkContext,
     const void* pvData, size_t uxDataLen)
 {
+    if (pvData == NULL || uxDataLen == 0)
+    {
+        return -1;
+    }
+
     int32_t lBytesSent = 0;
 
     if(pxNetworkContext != NULL && pxNetworkContext->pxTls != NULL)
@@ -86,8 +95,11 @@ int32_t espTlsTransportSend(NetworkContext_t* pxNetworkContext,
 int32_t espTlsTransportRecv(NetworkContext_t* pxNetworkContext,
     void* pvData, size_t uxDataLen)
 {
+    if (pvData == NULL || uxDataLen == 0)
+    {
+        return -1;
+    }
     int32_t lBytesRead = 0;
-
     if(pxNetworkContext != NULL && pxNetworkContext->pxTls != NULL)
     {
         xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
@@ -96,14 +108,17 @@ int32_t espTlsTransportRecv(NetworkContext_t* pxNetworkContext,
     }
     else
     {
-        lBytesRead = -1;
+        return -1; /* pxNetworkContext or pxTls uninitialised */
     }
-
-    /* Temporary fix for underlying mbedTLS want read error... connection is still fine. not sure why esp_tls_conn_read returns this error */
-    if(lBytesRead == -0x6900)
-    {
-        lBytesRead = 0;
+    if (lBytesRead == ESP_TLS_ERR_SSL_WANT_WRITE  || lBytesRead == ESP_TLS_ERR_SSL_WANT_READ) {
+        return 0;
     }
-
+    if (lBytesRead < 0) {
+        return lBytesRead;
+    }
+    if (lBytesRead == 0) {
+        /* Connection closed */
+        return -1;
+    }
     return lBytesRead;
 }

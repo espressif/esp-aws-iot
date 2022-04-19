@@ -18,3 +18,4 @@ target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/root_cert_auth.pem"
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client.crt" TEXT)
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/client.key" TEXT)
 target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/http_root_cert_auth.pem" TEXT)
+target_add_binary_data(${CMAKE_PROJECT_NAME}.elf "main/certs/aws_codesign.crt" TEXT)

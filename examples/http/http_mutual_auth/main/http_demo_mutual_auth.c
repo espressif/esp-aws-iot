@@ -107,6 +107,11 @@
  */
 static uint8_t userBuffer[ USER_BUFFER_LENGTH ];
 
+/**
+ * @brief Static buffer for TLS Context Semaphore.
+ */
+static StaticSemaphore_t xTlsContextSemaphoreBuffer;
+
 /*-----------------------------------------------------------*/
 
 int aws_iot_demo_main( int argc, char ** argv );
@@ -151,7 +156,7 @@ static int32_t connectToServer( NetworkContext_t * pNetworkContext )
     pNetworkContext->pcHostname = AWS_IOT_ENDPOINT;
     pNetworkContext->xPort = AWS_HTTPS_PORT;
     pNetworkContext->pxTls = NULL;
-    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
+    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutexStatic(&xTlsContextSemaphoreBuffer);
 
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
     pNetworkContext->pcClientCertPem = NULL;
