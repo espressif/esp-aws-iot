@@ -401,7 +401,7 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     uint32_t ulSignerCertSize;
     void * pvSigVerifyContext;
     uint8_t * pucSignerCert = 0;
-    static spi_flash_mmap_memory_t ota_data_map;
+    static spi_flash_mmap_handle_t ota_data_map;
     uint32_t mmu_free_pages_count, len, flash_offset = 0;
 
     /* Verify an ECDSA-SHA256 signature. */
