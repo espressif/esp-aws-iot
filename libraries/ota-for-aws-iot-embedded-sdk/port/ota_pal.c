@@ -466,12 +466,6 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
 
 end:
 
-    /* Free the signer certificate that we now own after prvReadAndAssumeCertificate(). */
-    if( pucSignerCert != NULL )
-    {
-        vPortFree( pucSignerCert );
-    }
-
     return result;
 }
 
