@@ -66,11 +66,11 @@ menu "AWS OTA"
 
         config AWS_OTA_LOG_ERROR
             bool "Enable Error Logging"
-            default n
+            default y
         
         config AWS_OTA_LOG_WARN
             bool "Enable Warning Logging"
-            default n
+            default y
 
         config AWS_OTA_LOG_INFO
             bool "Enable Info Logging"
