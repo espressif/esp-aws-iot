@@ -42,6 +42,7 @@
 #include "mbedtls/asn1.h"
 #include "mbedtls/bignum.h"
 #include "mbedtls/base64.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #define OTA_HALF_SECOND_DELAY    pdMS_TO_TICKS( 500UL )
@@ -79,7 +80,7 @@ typedef struct
 static esp_ota_context_t ota_ctx;
 static const char * TAG = "ota_pal";
 
-static const char codeSigningCertificatePEM[] = otapalconfigCODE_SIGNING_CERTIFICATE;
+static char * codeSigningCertificatePEM = NULL;
 
 /* Specify the OTA signature algorithm we support on this platform. */
 const char OTA_JsonFileSignatureKey[ OTA_FILE_SIG_KEY_STR_MAX_LENGTH ] = "sig-sha256-ecdsa";
@@ -375,7 +376,7 @@ uint8_t * otaPal_ReadAndAssumeCertificate( const uint8_t * const pucCertName,
                    ( const char * ) pucCertName ) );
 
         /* Allocate memory for the signer certificate plus a terminating zero so we can copy it and return to the caller. */
-        ulCertSize = sizeof( codeSigningCertificatePEM );
+        ulCertSize = strlen( codeSigningCertificatePEM ) + 1;
         pucSignerCert = pvPortMalloc( ulCertSize );            /*lint !e9029 !e9079 !e838 malloc proto requires void*. */
         pucCertData = ( uint8_t * ) codeSigningCertificatePEM; /*lint !e9005 we don't modify the cert but it could be set by PKCS11 so it's not const. */
 
@@ -400,7 +401,7 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     uint32_t ulSignerCertSize;
     void * pvSigVerifyContext;
     uint8_t * pucSignerCert = 0;
-    static spi_flash_mmap_memory_t ota_data_map;
+    static spi_flash_mmap_handle_t ota_data_map;
     uint32_t mmu_free_pages_count, len, flash_offset = 0;
 
     /* Verify an ECDSA-SHA256 signature. */
@@ -411,12 +412,16 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
         return OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, 0 );
     }
 
-    pucSignerCert = otaPal_ReadAndAssumeCertificate( ( const uint8_t * const ) pFileContext->pCertFilepath, &ulSignerCertSize );
+    pucSignerCert = (uint8_t *)codeSigningCertificatePEM;
 
     if( pucSignerCert == NULL )
     {
         LogError( ( "Cert read failed" ) );
         return OTA_PAL_COMBINE_ERR( OtaPalBadSignerCert, 0 );
+    }
+    else
+    {
+        ulSignerCertSize = strlen(codeSigningCertificatePEM) + 1;
     }
 
     mmu_free_pages_count = spi_flash_mmap_get_free_pages( SPI_FLASH_MMAP_DATA );
@@ -450,21 +455,16 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     if( CRYPTO_SignatureVerificationFinal( pvSigVerifyContext, ( char * ) pucSignerCert, ulSignerCertSize,
                                            pFileContext->pSignature->data, pFileContext->pSignature->size ) == pdFALSE )
     {
-        LogError( ( "Signature verification failed" ) );
+        LogError( ( "Signature verification failed." ) );
         result = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, 0 );
     }
     else
     {
+        LogInfo( ( "Signature verification succeeded." ) );
         result = OTA_PAL_COMBINE_ERR( OtaPalSuccess, 0 );
     }
 
 end:
-
-    /* Free the signer certificate that we now own after prvReadAndAssumeCertificate(). */
-    if( pucSignerCert != NULL )
-    {
-        vPortFree( pucSignerCert );
-    }
 
     return result;
 }
@@ -775,7 +775,25 @@ esp_err_t otaPal_EraseLastBootPartition(void)
     return(esp_ota_erase_last_boot_app_partition());
 }
 
-/* Provide access to private members for testing. */
-#ifdef FREERTOS_ENABLE_UNIT_TESTS
-    #include "aws_ota_pal_test_access_define.h"
-#endif
+bool otaPal_SetCodeSigningCertificate(const char * pcCodeSigningCertificatePEM)
+{
+    bool xRet = true;
+
+    if(codeSigningCertificatePEM != NULL)
+    {
+        vPortFree(codeSigningCertificatePEM);
+    }
+
+    codeSigningCertificatePEM = pvPortMalloc(strlen(pcCodeSigningCertificatePEM) + 1);
+
+    if(codeSigningCertificatePEM == NULL)
+    {
+        xRet = false;
+    }
+    else
+    {
+        strcpy(codeSigningCertificatePEM, pcCodeSigningCertificatePEM);
+    }
+
+    return xRet;
+}

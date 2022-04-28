@@ -93,19 +93,7 @@
  *
  * 10 bits yields a data block size of 1KB.
  */
-#define otaconfigLOG2_FILE_BLOCK_SIZE    CONFIG_LOG2_FILE_BLOCK_SIZE
-
-#define otapalconfigCODE_SIGNING_CERTIFICATE                         \
-"-----BEGIN CERTIFICATE-----\n"                                      \
-"MIIBcDCCARagAwIBAgIUYNy4lAy9AREPtp+bBG0chiEDUQMwCgYIKoZIzj0EAwIw\n" \
-"JTEjMCEGA1UEAwwaZGhhdmFsLmd1amFyQGVzcHJlc3NpZi5jb20wHhcNMjEwNzA2\n" \
-"MTI0MTA5WhcNMjIwNzA2MTI0MTA5WjAlMSMwIQYDVQQDDBpkaGF2YWwuZ3VqYXJA\n" \
-"ZXNwcmVzc2lmLmNvbTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABI/b7P+Y2c6f\n" \
-"PAD0fC2DCwaAUT/cplFr4AwyYjYk4qlAnBaEbltmukvZKIjkIct7sNEK0rbXSNf1\n" \
-"/QHDWu2hqkmjJDAiMAsGA1UdDwQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAK\n" \
-"BggqhkjOPQQDAgNIADBFAiEA6kjPuxXvyKEnavPC0R2B+uR3nTntrkiszXPuwbMA\n" \
-"CxICIGUnuxeOEx7SAT1O9G6b/k3oNxDf4xjzgHs7dcaSxwAo\n"                 \
-"-----END CERTIFICATE-----"
+#define otaconfigLOG2_FILE_BLOCK_SIZE           CONFIG_LOG2_FILE_BLOCK_SIZE
 
 /**
  * @brief Size of the file data block message (excluding the header).
@@ -209,14 +197,14 @@
  * Enable data over both MQTT & HTTP ( OTA_DATA_OVER_MQTT | OTA_DATA_OVER_HTTP )
  */
 
-#if defined(CONFIG_OTA_DATA_OVER_MQTT) && defined(CONFIG_OTA_DATA_OVER_HTTP)
+#if CONFIG_OTA_DATA_OVER_MQTT && CONFIG_OTA_DATA_OVER_HTTP
     #define configENABLED_DATA_PROTOCOLS ( OTA_DATA_OVER_MQTT | OTA_DATA_OVER_HTTP )
-#elif defined(CONFIG_OTA_DATA_OVER_HTTP)
+#elif CONFIG_OTA_DATA_OVER_HTTP
     #define configENABLED_DATA_PROTOCOLS            ( OTA_DATA_OVER_HTTP )
-#elif defined(CONFIG_OTA_DATA_OVER_MQTT)
+#elif CONFIG_OTA_DATA_OVER_MQTT
     #define configENABLED_DATA_PROTOCOLS            ( OTA_DATA_OVER_MQTT )
 #else
-    #warning "No protocol defined for OTA data operations."
+    #error "No protocol defined for OTA data operations."
 #endif
     
 /**
@@ -229,12 +217,14 @@
  * Note - use OTA_DATA_OVER_HTTP for HTTP as primary data protocol.
  */
 
-#if defined(CONFIG_OTA_DATA_OVER_MQTT_PRIMARY)
-    #define configOTA_PRIMARY_DATA_PROTOCOL         ( OTA_DATA_OVER_MQTT )
-#elif defined(CONFIG_OTA_DATA_OVER_HTTP_PRIMARY)
-    #define configOTA_PRIMARY_DATA_PROTOCOL         ( OTA_DATA_OVER_HTTP )  
+#if defined(CONFIG_OTA_PRIMARY_DATA_PROTOCOL)
+    #if CONFIG_OTA_PRIMARY_DATA_PROTOCOL == 1
+        #define configOTA_PRIMARY_DATA_PROTOCOL         ( OTA_DATA_OVER_MQTT )
+    #elif CONFIG_OTA_PRIMARY_DATA_PROTOCOL == 2
+        #define configOTA_PRIMARY_DATA_PROTOCOL         ( OTA_DATA_OVER_HTTP )
+    #endif
 #else
-    #warning "Primary data protocol for OTA data operations not defined."
+    #error "Primary data protocol for OTA data operations not defined."
 #endif
 
 #endif /* OTA_CONFIG_H_ */

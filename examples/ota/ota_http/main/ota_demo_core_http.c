@@ -90,6 +90,8 @@
     extern const char client_key_pem_end[] asm("_binary_client_key_end");
 #endif
 
+extern const char pcAwsCodeSigningCertPem[] asm("_binary_aws_codesign_crt_start");
+
 /**
  * @brief ALPN (Application-Layer Protocol Negotiation) protocol name for AWS IoT MQTT.
  *
@@ -292,6 +294,11 @@ const AppVersion32_t appFirmwareVersion =
     .u.x.minor = APP_VERSION_MINOR,
     .u.x.build = APP_VERSION_BUILD,
 };
+
+/**
+ * @brief Static buffer for TLS Context Semaphore.
+ */
+static StaticSemaphore_t xTlsContextSemaphoreBuffer;
 
 /**
  * @brief Network connection context used in this demo for MQTT connection.
@@ -1034,7 +1041,7 @@ static int priv_connectToServerWithBackoffRetries( NetworkContext_t * pNetworkCo
     pNetworkContext->pcHostname = AWS_IOT_ENDPOINT;
     pNetworkContext->xPort = AWS_MQTT_PORT;
     pNetworkContext->pxTls = NULL;
-    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
+    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutexStatic(&xTlsContextSemaphoreBuffer);
 
     pNetworkContext->disableSni = 0;
     uint16_t nextRetryBackOff;
@@ -1959,6 +1966,13 @@ static int startOTADemo( void )
 
     /* Set OTA Library interfaces.*/
     setOtaInterfaces( &otaInterfaces );
+
+    /* Set OTA Code Signing Certificate */
+    if( !otaPal_SetCodeSigningCertificate( pcAwsCodeSigningCertPem ) )
+    {
+         LogError( ( "Failed to allocate memory for Code Signing Certificate" ) );
+         returnStatus = EXIT_FAILURE;
+    }
 
     /****************************** Init OTA Library. ******************************/
 

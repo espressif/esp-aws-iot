@@ -35,37 +35,42 @@ menu "AWS OTA"
             testing purpose and it is recommended to always update to higher version and keep this
             configuration disabled.
 
-    config ENABLED_DATA_PROTOCOLS
-        prompt "The protocol selected for OTA data operations. (See help for more Info)"
-        default OTA_DATA_OVER_MQTT
-        help
-            This configurations parameter sets the protocols selected for the data operations
-            like requesting file blocks from the service.
-        config OTA_DATA_OVER_MQTT
-            bool "Data over MQTT"
-        config OTA_DATA_OVER_HTTP
-            bool "Data over HTTP"
+    config OTA_DATA_OVER_MQTT
+        bool "Enable data over MQTT"
+        default y
 
-    config OTA_PRIMARY_DATA_PROTOCOL
-        prompt "The preferred protocol selected for OTA data operations. (See help for more Info)"
+    config OTA_DATA_OVER_HTTP
+        bool "Enable data over HTTP"
+        default n
+
+    choice OTA_PRIMARY_DATA_PROTOCOL
+        bool "Primary Data Protocol"
         default OTA_DATA_OVER_MQTT_PRIMARY
         help
             Primary data protocol will be the protocol used for downloading file if more than
             one protocol is selected while creating OTA job.
         config OTA_DATA_OVER_MQTT_PRIMARY
-            bool "Data over MQTT (Primary)"
+            bool "MQTT"
+            depends on OTA_DATA_OVER_MQTT
         config OTA_DATA_OVER_HTTP_PRIMARY
-            bool "Data over HTTP (Primary)"
+            bool "HTTP"
+            depends on OTA_DATA_OVER_HTTP
+    endchoice
+
+    config OTA_PRIMARY_DATA_PROTOCOL
+        int 
+        default 1 if OTA_DATA_OVER_MQTT_PRIMARY
+        default 2 if OTA_DATA_OVER_HTTP_PRIMARY
 
     menu "Logging"
 
         config AWS_OTA_LOG_ERROR
             bool "Enable Error Logging"
-            default n
+            default y
         
         config AWS_OTA_LOG_WARN
             bool "Enable Warning Logging"
-            default n
+            default y
 
         config AWS_OTA_LOG_INFO
             bool "Enable Info Logging"

@@ -218,4 +218,14 @@ OtaPalImageState_t otaPal_GetPlatformImageState( OtaFileContext_t * const pFileC
  */
 esp_err_t otaPal_EraseLastBootPartition(void);
 
+
+/**
+ * @brief Sets the code signing certifcate used by the OTA library.
+ *
+ * @return
+ *        - false:   If memory could not be allocated for the code signing certficate.
+ *        - true:    If successful.
+ */
+bool otaPal_SetCodeSigningCertificate(const char * pcCodeSigningCertificatePEM);
+
 #endif /* ifndef OTA_PAL_H_ */

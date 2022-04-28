@@ -234,6 +234,11 @@ static uint16_t globalUnsubscribePacketIdentifier = 0U;
  */
 static PublishPackets_t outgoingPublishPackets[ MAX_OUTGOING_PUBLISHES ] = { 0 };
 
+/**
+ * @brief Static buffer for TLS Context Semaphore.
+ */
+static StaticSemaphore_t xTlsContextSemaphoreBuffer;
+
 /*-----------------------------------------------------------*/
 
 /**
@@ -330,7 +335,7 @@ static TlsTransportStatus_t prvConnectToServerWithBackoffRetries( NetworkContext
     BackoffAlgorithmStatus_t xBackoffAlgStatus = BackoffAlgorithmSuccess;
     BackoffAlgorithmContext_t xReconnectParams = { 0 };
     uint16_t usNextRetryBackOff = 0U;
-    pxNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutex();
+    pxNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutexStatic(&xTlsContextSemaphoreBuffer);
 
     pxNetworkContext->pcHostname = democonfigMQTT_BROKER_ENDPOINT;
     pxNetworkContext->xPort = democonfigMQTT_BROKER_PORT;
