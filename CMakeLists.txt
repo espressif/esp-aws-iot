@@ -1,4 +1,4 @@
-set(COMPONENT_ADD_INCLUDEDIRS "port/include aws-iot-device-sdk-embedded-C/include")
+set(COMPONENT_ADD_INCLUDEDIRS "port/include aws-iot-device-sdk-embedded-C/include aws-iot-device-sdk-embedded-C/external_libs/jsmn/" )
 set(aws_sdk_dir aws-iot-device-sdk-embedded-C/src)
 set(COMPONENT_SRCS "${aws_sdk_dir}/aws_iot_jobs_interface.c"
                    "${aws_sdk_dir}/aws_iot_jobs_json.c"
@@ -16,11 +16,11 @@ set(COMPONENT_SRCS "${aws_sdk_dir}/aws_iot_jobs_interface.c"
                    "${aws_sdk_dir}/aws_iot_shadow_actions.c"
                    "${aws_sdk_dir}/aws_iot_shadow_json.c"
                    "${aws_sdk_dir}/aws_iot_shadow_records.c"
+                   "aws-iot-device-sdk-embedded-C/external_libs/jsmn/jsmn.c"
                    "port/network_mbedtls_wrapper.c"
                    "port/threads_freertos.c"
                    "port/timer.c")
 
 set(COMPONENT_REQUIRES "mbedtls")
-set(COMPONENT_PRIV_REQUIRES "jsmn")
 
 register_component()

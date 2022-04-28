@@ -223,15 +223,28 @@ IoT_Error_t iot_tls_connect(Network *pNetwork, TLSConnectParams *params) {
 #endif
     if (pNetwork->tlsConnectParams.pDevicePrivateKeyLocation[0] == '/') {
         ESP_LOGD(TAG, "Loading client private key from file...");
+#ifdef MBEDTLS_2_X_COMPAT
         ret = mbedtls_pk_parse_keyfile(&(tlsDataParams->pkey),
                                        pNetwork->tlsConnectParams.pDevicePrivateKeyLocation,
                                        "");
+#else
+        ret = mbedtls_pk_parse_keyfile(&(tlsDataParams->pkey),
+                                       pNetwork->tlsConnectParams.pDevicePrivateKeyLocation,
+                                       "", mbedtls_ctr_drbg_random, NULL);
+#endif
     } else {
         ESP_LOGD(TAG, "Loading embedded client private key...");
+#ifdef MBEDTLS_2_X_COMPAT
         ret = mbedtls_pk_parse_key(&(tlsDataParams->pkey),
                                    (const unsigned char *)pNetwork->tlsConnectParams.pDevicePrivateKeyLocation,
                                    strlen(pNetwork->tlsConnectParams.pDevicePrivateKeyLocation)+1,
                                    (const unsigned char *)"", 0);
+#else
+        ret = mbedtls_pk_parse_key(&(tlsDataParams->pkey),
+                                   (const unsigned char *)pNetwork->tlsConnectParams.pDevicePrivateKeyLocation,
+                                   strlen(pNetwork->tlsConnectParams.pDevicePrivateKeyLocation)+1,
+                                   (const unsigned char *)"", 0, mbedtls_ctr_drbg_random, NULL);
+#endif
     }
     if(ret != 0) {
         ESP_LOGE(TAG, "failed!  mbedtls_pk_parse_key returned -0x%x while parsing private key", -ret);
