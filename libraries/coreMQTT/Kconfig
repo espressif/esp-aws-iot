@@ -114,4 +114,19 @@ menu "coreMQTT"
 
     endmenu # coreMQTT Logging
 
+    config CORE_MQTT_USE_SECURE_ELEMENT
+    bool
+    depends on ESP_TLS_USE_SECURE_ELEMENT
+    help
+        Enable the use of secure element for the component.
+        The esp-cryptoauthlib component is required for enabling
+        this option.
+
+    config CORE_MQTT_USE_DS_PERIPHERAL
+    bool
+    depends on ESP_TLS_USE_DS_PERIPHERAL
+    help
+        Enable the use of DS peripheral for the component.
+        The DS peripheral on the device must be provisioned first to use this option.
+
 endmenu # coreMQTT

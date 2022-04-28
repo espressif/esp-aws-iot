@@ -27,7 +27,11 @@ menu "Example Configuration"
 
         config EXAMPLE_USE_SECURE_ELEMENT
         bool "Use secure element (ATECC608A)"
-        depends on ESP_TLS_USE_SECURE_ELEMENT
+        depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
+        # To confirm that we are satisfying the dependancies of secure element
+        select ESP_TLS_USE_SECURE_ELEMENT
+        select CORE_HTTP_USE_SECURE_ELEMENT
+        select CORE_MQTT_USE_SECURE_ELEMENT
         help
             Enable the use of secure element for the example.
             The esp-cryptoauthlib component is required for enabling
@@ -35,7 +39,11 @@ menu "Example Configuration"
 
         config EXAMPLE_USE_DS_PERIPHERAL
         bool "Use DS peripheral"
-        depends on ESP_TLS_USE_DS_PERIPHERAL
+        depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED
+        # To confirm that we are satisfying the dependancies of ds peripheral
+        select ESP_TLS_USE_DS_PERIPHERAL
+        select CORE_HTTP_USE_DS_PERIPHERAL
+        select CORE_MQTT_USE_DS_PERIPHERAL
         help
             Enable the use of DS peripheral for the example.
             The DS peripheral on the device must be provisioned first to use this option.
