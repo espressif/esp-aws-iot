@@ -12,7 +12,6 @@ This framework enables AWS IoT cloud connectivity with ESP32 based platforms usi
     ```
 - Please refer to https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html for setting ESP-IDF
   - ESP-IDF can be downloaded from https://github.com/espressif/esp-idf/
-  - Please set your branch to `release/v4.3` and pull in the latest changes.
 - Please refer to [example README](examples/README.md) for more information on setting up examples
 - This framework supports multiple ways to securely store the PKI credentials.
   - The default method is to use PKI credentials which are embedded in the binary, using the certs from the `certs/` in every example. 
