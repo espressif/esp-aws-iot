@@ -80,6 +80,9 @@
 
 #include "app_mqtt_defines.h"
 
+/* Queue used to send and receive complete Cloud messages structures. */
+QueueHandle_t xAppCloudMsgQueue = NULL;
+
 /**
  * These configuration settings are required to run the mutual auth demo.
  * Throw compilation error if the below configs are not defined.
@@ -285,22 +288,6 @@
 
 /*-----------------------------------------------------------*/
 
-/**
- * @brief Structure to keep the MQTT publish packets until an ack is received
- * for QoS1 publishes.
- */
-typedef struct PublishPackets
-{
-    /**
-     * @brief Packet identifier of the publish packet.
-     */
-    uint16_t packetId;
-
-    /**
-     * @brief Publish info of the publish packet.
-     */
-    MQTTPublishInfo_t pubInfo;
-} PublishPackets_t;
 
 /*-----------------------------------------------------------*/
 
@@ -1539,6 +1526,16 @@ int aws_iot_demo_main( int argc,
      * done only once in this demo. */
     returnStatus = initializeMqtt( &mqttContext, &xNetworkContext );//Need to return success always in real app deploy
     LogInfo( ( "returnStatus of initializeMqtt: %d",returnStatus ) );
+
+    /* Create the queue used to send complete struct AMessage structures.  This can
+    also be created after the schedule starts, but care must be task to ensure
+    nothing uses the queue until after it has been created. */
+    xAppCloudMsgQueue = xQueueCreate(
+                            /* The number of items the queue can hold. */
+                            MAX_OUTGOING_PUBLISHES,
+                            /* Size of each item is big enough to hold the
+                            whole structure. */
+                            sizeof( AppCloudMsg_t ) );
     // if( returnStatus == EXIT_SUCCESS )
     // {
         APP_COMMUNICATION_STATES eAWSCommStates=ESTABLISH_BROKER_TLS_CONNC;
@@ -1689,10 +1686,37 @@ int aws_iot_demo_main( int argc,
                     }
                 break;
                 case PUBLISH_AND_RECV_FROM_CLOUD:
-                    LogInfo( ( "Sending Publish to the MQTT topic %.*s.",
-                            MQTT_EXAMPLE_TOPIC_LENGTH,
-                            MQTT_EXAMPLE_TOPIC ) );
-                    returnStatus = publishToTopic( &mqttContext );
+                {
+                    AppCloudMsg_t sAppCloudMsg;
+                    AppCloudMsg_t sAppCloudMsgSend;
+                    if( xAppCloudMsgQueue != NULL )
+                    {
+                        // /* Send the entire structure to the queue created to hold 10 structures. */
+                        // xQueueSend( /* The handle of the queue. */
+                        //                 xAppCloudMsgQueue,
+                        //                 /* The address of the xMessage variable.  sizeof( struct AMessage )
+                        //                 bytes are copied from here into the queue. */
+                        //                 ( void * ) &sAppCloudMsgSend,
+                        //                 /* Block time of 0 says don't block if the queue is already full.
+                        //                 Check the value returned by xQueueSend() to know if the message
+                        //                 was sent to the queue successfully. */
+                        //                 ( TickType_t ) 0 );
+
+                        /* Receive a message from the created queue to hold complex struct AMessage
+                        structure.  Block for 10 ticks if a message is not immediately available.
+                        The value is read into a struct AMessage variable, so after calling
+                        xQueueReceive() xRxedStructure will hold a copy of xMessage. */
+                        if( xQueueReceive( xAppCloudMsgQueue,
+                                            &( sAppCloudMsg ),
+                                            ( TickType_t )0 ) == pdPASS )
+                        {
+                            LogInfo( ( "Sending Publish to the MQTT topic %.*s.",
+                                        MQTT_EXAMPLE_TOPIC_LENGTH,
+                                        MQTT_EXAMPLE_TOPIC ) );
+                            returnStatus = publishToTopic( &mqttContext );
+                        }
+                    }
+                    
 
                     /* Calling MQTT_ProcessLoop to process incoming publish echo, since
                     * application subscribed to the same topic the broker will send
@@ -1714,6 +1738,7 @@ int aws_iot_demo_main( int argc,
                     LogInfo( ( "Short delay before starting the next iteration....\n" ) );
                     sleep( MQTT_SUBPUB_LOOP_DELAY_SECONDS );
                 break;
+                }
                 default:
                     break;
             }
