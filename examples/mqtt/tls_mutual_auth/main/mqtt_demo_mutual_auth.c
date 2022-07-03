@@ -79,10 +79,21 @@
 #include "mqtt_subscription_manager.h"
 
 #include "app_mqtt_defines.h"
+#include "esp_event_base.h"
 
 /* Queue used to send and receive complete Cloud messages structures. */
 QueueHandle_t xAppCloudMsgQueue = NULL;
+APP_COMMUNICATION_STATES eAWSCommStates=ESTABLISH_BROKER_TLS_CONNC;
+void on_wifi_disconnect_app(void *arg, esp_event_base_t event_base,
+                               int32_t event_id, void *event_data)
+                               {
+                                     eAWSCommStates=ESTABLISH_BROKER_TLS_CONNC;
+                               }
+void on_wifi_connect_app(void *esp_netif, esp_event_base_t event_base,
+                            int32_t event_id, void *event_data)
+                            {
 
+                            }
 /**
  * These configuration settings are required to run the mutual auth demo.
  * Throw compilation error if the below configs are not defined.
@@ -577,7 +588,17 @@ static void humidityDataCallback( MQTTContext_t * pContext,
 
     /* Set the global flag to indicate that the humidity data has been received. */
     globalReceivedHumidityData = true;
-
+                        //                     AppCloudMsg_t sAppCloudMsgSend;
+                        // /* Send the entire structure to the queue created to hold 10 structures. */
+                        // xQueueSend( /* The handle of the queue. */
+                        //                 xAppCloudMsgQueue,
+                        //                 /* The address of the xMessage variable.  sizeof( struct AMessage )
+                        //                 bytes are copied from here into the queue. */
+                        //                 ( void * ) &sAppCloudMsgSend,
+                        //                 /* Block time of 0 says don't block if the queue is already full.
+                        //                 Check the value returned by xQueueSend() to know if the message
+                        //                 was sent to the queue successfully. */
+                        //                 ( TickType_t ) 0 );
     handleIncomingPublish( pPublishInfo );
 }
 /*Callback END*/
@@ -1238,7 +1259,6 @@ static int subscribeToAndRegisterTopicFilter( MQTTContext_t * pContext,
     managerStatus = SubscriptionManager_RegisterCallback( pTopicFilter,
                                                           topicFilterLength,
                                                           callback );
-
     if( managerStatus != SUBSCRIPTION_MANAGER_SUCCESS )
     {
         returnStatus = EXIT_FAILURE;
@@ -1506,8 +1526,6 @@ int aws_iot_demo_main( int argc,
     /*SUBPUB LOOP VARS START*/
     bool mqttSessionEstablished = false, brokerSessionPresent;
     MQTTStatus_t mqttStatus = MQTTSuccess;
-    uint32_t publishCount = 0;
-    const uint32_t maxPublishCount = MQTT_PUBLISH_COUNT_PER_LOOP;
     bool createCleanSession = false;
     /*SUBPUB LOOP VARS END*/
 
@@ -1536,9 +1554,13 @@ int aws_iot_demo_main( int argc,
                             /* Size of each item is big enough to hold the
                             whole structure. */
                             sizeof( AppCloudMsg_t ) );
+    //need to enable this in wifi handler 
+    // ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect_app, NULL));
+    // ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &on_wifi_connect_app, netif));
+
     // if( returnStatus == EXIT_SUCCESS )
     // {
-        APP_COMMUNICATION_STATES eAWSCommStates=ESTABLISH_BROKER_TLS_CONNC;
+        eAWSCommStates=ESTABLISH_BROKER_TLS_CONNC;
         for( ; ; )
         {
             switch (eAWSCommStates)
@@ -1622,6 +1644,8 @@ int aws_iot_demo_main( int argc,
                 break;
                 case SUBSCRIBE_TO_TOPICS:
                 //TODO: need to update this block for multiple topic subscribes
+                //need to check why wrong topic subscription is behaving wierdly
+                    returnStatus = EXIT_SUCCESS;//need to update this only patch
                     if( returnStatus == EXIT_SUCCESS )
                     {
                         /* The client is now connected to the broker. Subscribe to the topic
@@ -1632,7 +1656,7 @@ int aws_iot_demo_main( int argc,
                             * therefore, the Publish messages received from the broker will have QOS1. */
                         LogInfo( ( "Subscribing to the MQTT topic %.*s.",
                                     MQTT_EXAMPLE_TOPIC_LENGTH,
-                                    MQTT_EXAMPLE_TOPIC ) );\
+                                    MQTT_EXAMPLE_TOPIC ) );
 
                         // returnStatus = subscribeToTopic( pMqttContext, MQTT_EXAMPLE_TOPIC, MQTT_EXAMPLE_TOPIC_LENGTH );
 
@@ -1644,7 +1668,6 @@ int aws_iot_demo_main( int argc,
                                                                             humidityDataCallback );
 
                     }
-
                     if( returnStatus == EXIT_SUCCESS )
                     {
                         /* Process incoming packet from the broker. Acknowledgment for subscription
@@ -1655,19 +1678,18 @@ int aws_iot_demo_main( int argc,
                             * must be ready to receive any packet. This demo uses MQTT_ProcessLoop to
                             * receive packet from network. */
                         mqttStatus = MQTT_ProcessLoop( &mqttContext, MQTT_PROCESS_LOOP_TIMEOUT_MS );
-
                         if( mqttStatus != MQTTSuccess )
                         {
                             returnStatus = EXIT_FAILURE;
                             LogError( ( "MQTT_ProcessLoop returned with status = %s.",
                                         MQTT_Status_strerror( mqttStatus ) ) );
                         }
-                        else
+                        else if(globalSubAckStatus != MQTTSubAckFailure)
                         {
                             eAWSCommStates=PUBLISH_AND_RECV_FROM_CLOUD;
+                            break;
                         }
                     }
-
                     /* Check if recent subscription request has been rejected. globalSubAckStatus is updated
                         * in eventCallback to reflect the status of the SUBACK sent by the broker. */
                     if( ( returnStatus == EXIT_SUCCESS ) && ( globalSubAckStatus == MQTTSubAckFailure ) )
@@ -1688,7 +1710,7 @@ int aws_iot_demo_main( int argc,
                 case PUBLISH_AND_RECV_FROM_CLOUD:
                 {
                     AppCloudMsg_t sAppCloudMsg;
-                    AppCloudMsg_t sAppCloudMsgSend;
+                    // AppCloudMsg_t sAppCloudMsgSend;
                     if( xAppCloudMsgQueue != NULL )
                     {
                         // /* Send the entire structure to the queue created to hold 10 structures. */
@@ -1750,6 +1772,7 @@ int aws_iot_demo_main( int argc,
 
             // LogInfo( ( "Short delay before starting the next iteration....\n" ) );
             // sleep( MQTT_SUBPUB_LOOP_DELAY_SECONDS );
+            sleep(1);//yielding to avoid task watchdog
         }
     // }
 
