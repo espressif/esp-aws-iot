@@ -2,42 +2,56 @@ stages:
   - build
 
 variables:
-  BATCH_BUILD: "1"
   V: "0"
-  MAKEFLAGS: "-j5 --no-keep-going"
-  IDF_PATH: "$CI_PROJECT_DIR/esp-idf"
-  IDF_GITHUB_REPO: "https://github.com/espressif"
+  MAKEFLAGS: "-j8 --no-keep-going"
+  GIT_SUBMODULE_STRATEGY: recursive
 
-build_demo:
-  stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env
-  tags:
-    - build
-  script:
-    # add gitlab ssh key
-    - export PATH="$IDF_PATH/tools:$PATH"
+before_script:
+   # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
-    - git --version
-    - git submodule update --init --recursive
-    - git clone --recursive --branch master --depth 1 $IDF_GITHUB_REPO/esp-idf.git
-    - export PATH="$IDF_PATH/tools:$PATH"
-    - cd esp-idf
-    - ./install.sh
-    - . export.sh
-    - cd ..
-    - cd examples/thing_shadow
-    - cat sdkconfig.ci >> sdkconfig.defaults
-    - make defconfig && make -j4
-    - make clean && rm -rf build
-    - idf.py build
-    - cd ../..
-    - cd examples/subscribe_publish
-    - cat sdkconfig.ci >> sdkconfig.defaults
-    - make defconfig && make -j4
-    - make clean && rm -rf build
-    - idf.py build
+    # Create esp-rainmaker-bins-${CI_JOB_ID}/ dir (to copy binaries into for artifacts)
+    - mkdir -p $CI_PROJECT_DIR/esp-rainmaker-bins-${CI_JOB_ID}
+
+.build_all_examples: &build_all_examples
+- pip install --upgrade idf-component-manager
+- for EXAMPLE in $EXAMPLES; do
+- cd $CI_PROJECT_DIR/examples/$EXAMPLE
+- echo Building $EXAMPLE
+- for TARGET in $EXAMPLE_TARGETS; do
+- echo Building for $TARGET
+- idf.py set-target $TARGET
+- idf.py build
+- done
+- echo Build Complete for $EXAMPLE
+- done
+
+.build_template:
+  stage: build
+  image: espressif/idf:latest
+  tags:
+    - build
+  variables:
+    PEDANTIC_FLAGS: "-Werror -Werror=deprecated-declarations -Wno-error=cpp -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
+    EXTRA_CFLAGS: "${PEDANTIC_FLAGS}"
+    EXTRA_CXXFLAGS: "${PEDANTIC_FLAGS}"
+    EXAMPLE_TARGETS: "esp32"
+    EXAMPLES: "mqtt/tls_mutual_auth"
+  script:
+    - *build_all_examples
+
+build_idf_v4.3:
+  extends: .build_template
+  image: espressif/idf:release-v4.3
+  variables:
+    EXAMPLE_TARGETS: "esp32 esp32s2 esp32c3"
+
+build_idf_v4.4:
+  extends: .build_template
+  image: espressif/idf:release-v4.4
+  variables:
+    EXAMPLE_TARGETS: "esp32 esp32s2 esp32c3 esp32s3"
