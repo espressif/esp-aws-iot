@@ -1,0 +1,12 @@
+{
+    "idf.adapterTargetName": "esp32c3",
+    "idf.openOcdConfigs": [
+        "board/esp32c3-builtin.cfg"
+    ],
+    "idf.portWin": "COM3",
+    "idf.flashType": "UART",
+    "files.associations": {
+        "esp_event.h": "c",
+        "mqtt_subscription_manager.h": "c"
+    }
+}
