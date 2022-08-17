@@ -25,9 +25,24 @@ struct NetworkContext
     esp_tls_t* pxTls;
     const char *pcHostname;          /**< @brief Server host name. */
     int xPort;                       /**< @brief Server port in host-order. */
-    const char *pcServerRootCAPem;   /**< @brief String representing a trusted server root certificate. */
-    const char *pcClientCertPem;     /**< @brief String representing the client certificate. */
-    const char *pcClientKeyPem;      /**< @brief String representing the client certificate's private key. */
+    union
+    {
+        const char *pcServerRootCAPem;          /**< @brief A trusted server root certificate in PEM format. */
+        const unsigned char *pcServerRootCADer; /**< @brief A trusted server root certificate in DER format. */
+    };
+    size_t uxServerRootCALen;        /**< @brief The length of the trusted server root certificate or 0 if it's a null terminated PEM. */
+    union
+    {
+        const char *pcClientCertPem;            /**< @brief The client certificate in PEM format. */
+        const unsigned char *pcClientCertDer;   /**< @brief The client certificate in DER format. */
+    };
+    size_t uxClientCertLen;          /**< @brief The length of the client certificate or 0 if it's a null terminated PEM. */
+    union
+    {
+        const char *pcClientKeyPem;             /**< @brief The client certificate's private key in PEM format. */
+        const unsigned char *pcClientKeyDer;    /**< @brief The client certificate's private key in DER format. */
+    };
+    size_t uxClientKeyLen;           /**< @brief The length of the client certificate's private key or 0 if it's a null terminated PEM. */
     bool use_secure_element;         /**< @brief Boolean representing the use of secure element
                                                  for the TLS connection. */
     void *ds_data;                   /**< @brief Pointer for digital signature peripheral context */
