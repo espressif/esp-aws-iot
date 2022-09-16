@@ -25,27 +25,6 @@ set(AWS_OTA_SRCS
     ${AWS_OTA_PORT_SRCS}
 )
 
-set( TINYCBOR_SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src/cborpretty.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src/cborpretty_stdio.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src/cborencoder.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src/cborencoder_close_container_checked.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src/cborerrorstrings.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src/cborparser.c"
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src/cborparser_dup_string.c"
-)
-set(TINYCBOR_INCLUDE_DIRS
-    "${CMAKE_CURRENT_LIST_DIR}/../tinycbor/src"
-)
-# Use C99 for tinycbor as it is incompatible with C90
-if(CMAKE_C_STANDARD LESS 99)
-    set_source_files_properties(
-        ${TINYCBOR_SOURCES}
-        PROPERTIES
-        COMPILE_FLAGS "-std=gnu99"
-    )
-endif()
-
 set(AWS_OTA_REQUIRES
     esp_rom
     mbedtls
@@ -57,15 +36,14 @@ set(AWS_OTA_REQUIRES
     efuse
     log
     app_update
+    cbor
 )
 
 idf_component_register(
     SRCS
         ${AWS_OTA_SRCS}
-        ${TINYCBOR_SOURCES}
     INCLUDE_DIRS
         ${AWS_OTA_INCLUDE_DIRS}
-        ${TINYCBOR_INCLUDE_DIRS}
     PRIV_INCLUDE_DIRS
         ${OTA_INCLUDE_PRIVATE_DIRS}
     REQUIRES
