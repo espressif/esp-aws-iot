@@ -45,18 +45,26 @@
 /* Define logging macros based on configurations in sdkconfig.h. */
 #if CONFIG_CORE_MQTT_LOG_ERROR
     #define LogError( message, ... ) ESP_LOGE( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogError( message, ... )
 #endif
 
 #if CONFIG_CORE_MQTT_LOG_WARN
     #define LogWarn( message, ... ) ESP_LOGW( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogWarn( message, ... )
 #endif
 
 #if CONFIG_CORE_MQTT_LOG_INFO
     #define LogInfo( message, ... ) ESP_LOGI( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogInfo( message, ... )
 #endif
 
 #if CONFIG_CORE_MQTT_LOG_DEBUG
     #define LogDebug( message, ... ) ESP_LOGD( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
+#else
+    #define LogDebug( message, ... )
 #endif
 
 /* coreMQTT configurations */
