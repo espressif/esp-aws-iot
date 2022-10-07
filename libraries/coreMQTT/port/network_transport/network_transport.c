@@ -1,5 +1,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include <string.h>
 #include "esp_log.h"
 #include "esp_tls.h"
 #include "network_transport.h"

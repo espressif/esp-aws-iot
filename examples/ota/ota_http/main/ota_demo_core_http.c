@@ -2063,7 +2063,7 @@ static int startOTADemo( void )
                     /* Get OTA statistics for currently executing job. */
                     OTA_GetStatistics( &otaStatistics );
 
-                    LogInfo( ( " Received: %u   Queued: %u   Processed: %u   Dropped: %u",
+                    LogInfo( ( " Received: %"PRIu32"   Queued: %"PRIu32"   Processed: %"PRIu32"   Dropped: %"PRIu32"",
                                otaStatistics.otaPacketsReceived,
                                otaStatistics.otaPacketsQueued,
                                otaStatistics.otaPacketsProcessed,

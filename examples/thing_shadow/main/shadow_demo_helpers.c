@@ -908,8 +908,8 @@ int32_t PublishToTopic( const char * pTopicFilter,
         }
         else
         {
-            LogInfo( ( "PUBLISH sent for topic %.*s to broker with packet ID %u.",
-                       topicFilterLength,
+            LogInfo( ( "PUBLISH sent for topic %.*s to broker with packet ID %d.",
+                       (int) topicFilterLength,
                        pTopicFilter,
                        outgoingPublishPackets[ publishIndex ].packetId ) );
 

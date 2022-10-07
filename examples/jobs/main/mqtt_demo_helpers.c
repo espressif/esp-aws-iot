@@ -945,8 +945,8 @@ BaseType_t xPublishToTopic( MQTTContext_t * pxMqttContext,
         }
         else
         {
-            LogInfo( ( "PUBLISH sent for topic %.*s to broker with packet ID %u.\n\n",
-                       topicFilterLength,
+            LogInfo( ( "PUBLISH sent for topic %.*s to broker with packet ID %d.\n\n",
+                       (int) topicFilterLength,
                        pcTopicFilter,
                        outgoingPublishPackets[ ucPublishIndex ].packetId ) );
 

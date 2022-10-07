@@ -50,6 +50,17 @@
 
 #define CRYPTO_PRINT( X )    configPRINTF( X )
 
+/* Compatibility for mbedTLS v2.x and 3.0 upwards */
+
+#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
+    #define mbedtls_sha1_starts_ret       mbedtls_sha1_starts
+    #define mbedtls_sha1_finish_ret       mbedtls_sha1_finish
+    #define mbedtls_sha1_update_ret       mbedtls_sha1_update
+    #define mbedtls_sha256_finish_ret     mbedtls_sha256_finish
+    #define mbedtls_sha256_starts_ret     mbedtls_sha256_starts
+    #define mbedtls_sha256_update_ret     mbedtls_sha256_update
+#endif
+
 /**
  * @brief Internal signature verification context structure
  */

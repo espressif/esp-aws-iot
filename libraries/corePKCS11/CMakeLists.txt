@@ -31,6 +31,7 @@ set(COREPKCS_REQUIRES
     nvs_flash
     log
     bootloader_support
+    spi_flash
 )
 
 idf_component_register(

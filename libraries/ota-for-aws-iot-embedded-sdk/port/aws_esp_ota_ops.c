@@ -24,7 +24,11 @@
 
 #include "esp_err.h"
 #include "esp_partition.h"
-#include "esp_spi_flash.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    #include "spi_flash_mmap.h"    
+#else
+    #include "esp_spi_flash.h"
+#endif
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
@@ -76,12 +80,12 @@ static const esp_partition_t *_esp_get_otadata_partition(uint32_t *offset, ota_s
         } else if ((gen_0_seq >= gen_1_seq && active_part) || (gen_1_seq > gen_0_seq && !active_part)) {
             memcpy(entry, &s_ota_select[0], sizeof(ota_select));
             *offset = 0;
-            ESP_LOGI(TAG, "[0] aflags/seq:0x%x/0x%x, pflags/seq:0x%x/0x%x",
+            ESP_LOGI(TAG, "[0] aflags/seq:0x%"PRIx32"/0x%"PRIx32", pflags/seq:0x%"PRIx32"/0x%"PRIx32"",
                             s_ota_select[0].ota_state, gen_0_seq, s_ota_select[1].ota_state, gen_1_seq);
         } else {
             memcpy(entry, &s_ota_select[1], sizeof(ota_select));
             *offset = SPI_FLASH_SEC_SIZE;
-            ESP_LOGI(TAG, "[1] aflags/seq:0x%x/0x%x, pflags/seq:0x%x/0x%x",
+            ESP_LOGI(TAG, "[1] aflags/seq:0x%"PRIx32"/0x%"PRIx32", pflags/seq:0x%"PRIx32"/0x%"PRIx32"",
                             s_ota_select[1].ota_state, gen_1_seq, s_ota_select[0].ota_state, gen_0_seq);
         }
     } else {
@@ -103,7 +107,7 @@ esp_err_t aws_esp_ota_set_boot_flags(uint32_t flags, bool active_part)
     uint32_t offset;
     ota_select entry;
 
-    ESP_LOGI(TAG, "%s: %d %d", __func__, flags, active_part);
+    ESP_LOGI(TAG, "%s: %"PRIi32" %d", __func__, flags, active_part);
     part = _esp_get_otadata_partition(&offset, &entry, active_part);
     if (part == NULL) {
         return ESP_FAIL;
@@ -111,12 +115,12 @@ esp_err_t aws_esp_ota_set_boot_flags(uint32_t flags, bool active_part)
     entry.ota_state = flags;
     esp_err_t ret = esp_partition_erase_range(part, offset, SPI_FLASH_SEC_SIZE);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to erase partition %d %d", offset, ret);
+        ESP_LOGE(TAG, "failed to erase partition %"PRIi32" %d", offset, ret);
         return ret;
     }
     ret = esp_partition_write(part, offset, &entry, sizeof(ota_select));
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "failed to write partition %d %d", offset, ret);
+        ESP_LOGE(TAG, "failed to write partition %"PRIi32" %d", offset, ret);
         return ret;
     }
 #ifdef CONFIG_APP_ANTI_ROLLBACK
