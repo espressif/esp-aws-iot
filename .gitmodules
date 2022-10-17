@@ -27,4 +27,4 @@
 	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
 [submodule "libraries/coreMQTT/coreMQTT"]
 	path = libraries/coreMQTT/coreMQTT
-	url = https://github.com/FreeRTOS/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT.git
