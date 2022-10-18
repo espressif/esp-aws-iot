@@ -74,25 +74,24 @@ menu "coreMQTT"
             If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
             is supplied to the library, then MQTT_RECV_POLLING_TIMEOUT_MS MUST be set to 0.
 
-    config MQTT_SEND_RETRY_TIMEOUT_MS
-        int "MQTT Send Retry Timeout Milliseconds"
-        default 10
+    config MQTT_SEND_TIMEOUT_MS
+        int "MQTT Send Timeout Milliseconds"
+        default 20000
         range 0 4294967295
         help
-            The maximum duration between non-empty network transmissions while
-            sending an MQTT packet via the MQTT_ProcessLoop or #MQTT_ReceiveLoop
-            API functions.
-        
-            When sending an MQTT packet, the transport send function may be called multiple
-            times until all of the required number of bytes are sent.
-            This timeout represents the maximum duration that is allowed for no data
-            transmission over the network through the transport send function.
-        
-            If the timeout expires, the MQTT_ProcessLoop and #MQTT_ReceiveLoop functions
-            return #MQTTSendFailed.
-        
-            If a dummy implementation of the MQTTGetCurrentTimeFunc_t timer function,
-            is supplied to the library, then MQTT_SEND_RETRY_TIMEOUT_MS MUST be set to 0.
+            The maximum duration allowed to send an MQTT packet over the transport
+            interface.
+
+            When sending an MQTT packet, the transport send or writev functions may be
+            called multiple times until all of the required number of bytes are sent.
+            This timeout represents the maximum duration that is allowed to send the MQTT
+            packet while calling the transport send or writev functions.
+
+            If the timeout expires, #MQTTSendFailed will be returned by the public API
+            functions.
+
+            If a dummy implementation of the #MQTTGetCurrentTimeFunc_t timer function,
+            is supplied to the library, then #MQTT_SEND_TIMEOUT_MS MUST be set to 0.
 
     menu "Logging"
 
