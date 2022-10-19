@@ -1,6 +1,12 @@
 #ifndef ESP_TLS_TRANSPORT_H
 #define ESP_TLS_TRANSPORT_H
 
+/* *INDENT-OFF* */
+#ifdef __cplusplus
+    extern "C" {
+#endif
+/* *INDENT-ON* */
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "transport_interface.h"
@@ -57,5 +63,11 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
 
 int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
     void* pvData, size_t uxDataLen );
+
+/* *INDENT-OFF* */
+#ifdef __cplusplus
+    }
+#endif
+/* *INDENT-ON* */
 
 #endif /* ESP_TLS_TRANSPORT_H */
