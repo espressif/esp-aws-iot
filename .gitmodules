@@ -1,3 +1,6 @@
+[submodule "libraries/coreMQTT/coreMQTT"]
+	path = libraries/coreMQTT/coreMQTT
+	url = https://github.com/FreeRTOS/coreMQTT.git
 [submodule "libraries/coreMQTT-Agent/coreMQTT-Agent"]
 	path = libraries/coreMQTT-Agent/coreMQTT-Agent
 	url = https://github.com/FreeRTOS/coreMQTT-Agent.git
@@ -25,6 +28,3 @@
 [submodule "libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk"]
 	path = libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk
 	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
-[submodule "libraries/coreMQTT/coreMQTT"]
-	path = libraries/coreMQTT/coreMQTT
-	url = https://github.com/FreeRTOS/coreMQTT.git
