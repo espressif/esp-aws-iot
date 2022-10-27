@@ -6,6 +6,7 @@ set(EXTRA_COMPONENT_DIRS "$ENV{IDF_PATH}/examples/common_components/protocol_exa
    					     "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/ota-for-aws-iot-embedded-sdk"
 						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/coreMQTT"
 						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/coreHTTP"
+						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/coreJSON"			 
 						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/corePKCS11"
 						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/backoffAlgorithm"
 						 "${CMAKE_CURRENT_LIST_DIR}/../../../libraries/common/posix_compat"

@@ -130,11 +130,6 @@
 #define MQTT_PACKET_ID_INVALID              ( ( uint16_t ) 0U )
 
 /**
- * @brief Timeout for MQTT_ProcessLoop function in milliseconds.
- */
-#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 1500U )
-
-/**
  * @brief The maximum time interval in seconds which is allowed to elapse
  *  between two Control Packets.
  *
@@ -597,6 +592,7 @@ int32_t EstablishMqttSession( MQTTEventCallback_t eventCallback )
         transport.pNetworkContext = pNetworkContext;
         transport.send = espTlsTransportSend;
         transport.recv = espTlsTransportRecv;
+        transport.writev = NULL;
 
         /* Fill the values for network buffer. */
         networkBuffer.pBuffer = buffer;
@@ -779,7 +775,7 @@ int32_t SubscribeToTopic( const char * pTopicFilter,
          * of receiving publish message before subscribe ack is zero; but application
          * must be ready to receive any packet. This demo uses MQTT_ProcessLoop to
          * receive packet from network. */
-        mqttStatus = MQTT_ProcessLoop( pMqttContext, MQTT_PROCESS_LOOP_TIMEOUT_MS );
+        mqttStatus = MQTT_ProcessLoop( pMqttContext );
 
         if( mqttStatus != MQTTSuccess )
         {
@@ -842,7 +838,7 @@ int32_t UnsubscribeFromTopic( const char * pTopicFilter,
          * of receiving publish message before subscribe ack is zero; but application
          * must be ready to receive any packet. This demo uses MQTT_ProcessLoop to
          * receive packet from network. */
-        mqttStatus = MQTT_ProcessLoop( pMqttContext, MQTT_PROCESS_LOOP_TIMEOUT_MS );
+        mqttStatus = MQTT_ProcessLoop( pMqttContext );
 
         if( mqttStatus != MQTTSuccess )
         {
@@ -919,7 +915,7 @@ int32_t PublishToTopic( const char * pTopicFilter,
              * sends ping request to broker if MQTT_KEEP_ALIVE_INTERVAL_SECONDS
              * has expired since the last MQTT packet sent and receive
              * ping responses. */
-            mqttStatus = MQTT_ProcessLoop( &mqttContext, MQTT_PROCESS_LOOP_TIMEOUT_MS );
+            mqttStatus = MQTT_ProcessLoop( &mqttContext );
 
             if( mqttStatus != MQTTSuccess )
             {

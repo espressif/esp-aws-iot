@@ -116,11 +116,6 @@
 #define mqttexampleDELAY_BETWEEN_DEMO_ITERATIONS     ( pdMS_TO_TICKS( 5000U ) )
 
 /**
- * @brief Timeout for MQTT_ProcessLoop in milliseconds.
- */
-#define mqttexamplePROCESS_LOOP_TIMEOUT_MS           ( 1500U )
-
-/**
  * @brief Keep alive time reported to the broker while establishing an MQTT connection.
  *
  * It is the responsibility of the Client to ensure that the interval between
@@ -632,6 +627,7 @@ BaseType_t xEstablishMqttSession( MQTTContext_t * pxMqttContext,
         xTransport.pNetworkContext = pxNetworkContext;
         xTransport.send = espTlsTransportSend;
         xTransport.recv = espTlsTransportRecv;
+        xTransport.writev = NULL;
 
         /* Initialize MQTT library. */
         xMQTTStatus = MQTT_Init( pxMqttContext,
@@ -822,7 +818,7 @@ BaseType_t xSubscribeToTopic( MQTTContext_t * pxMqttContext,
          * of receiving publish message before subscribe ack is zero; but application
          * must be ready to receive any packet. This demo uses MQTT_ProcessLoop to
          * receive packet from network. */
-        xMQTTStatus = MQTT_ProcessLoop( pxMqttContext, mqttexamplePROCESS_LOOP_TIMEOUT_MS );
+        xMQTTStatus = MQTT_ProcessLoop( pxMqttContext );
 
         if( xMQTTStatus != MQTTSuccess )
         {
@@ -879,7 +875,7 @@ BaseType_t xUnsubscribeFromTopic( MQTTContext_t * pxMqttContext,
                    pcTopicFilter ) );
 
         /* Process the incoming packet from the broker. */
-        xMQTTStatus = MQTT_ProcessLoop( pxMqttContext, mqttexamplePROCESS_LOOP_TIMEOUT_MS );
+        xMQTTStatus = MQTT_ProcessLoop( pxMqttContext );
 
         if( xMQTTStatus != MQTTSuccess )
         {
@@ -956,7 +952,7 @@ BaseType_t xPublishToTopic( MQTTContext_t * pxMqttContext,
              * sends ping request to broker if MQTT_KEEP_ALIVE_INTERVAL_SECONDS
              * has expired since the last MQTT packet sent and receive
              * ping responses. */
-            xMQTTStatus = MQTT_ProcessLoop( pxMqttContext, mqttexamplePROCESS_LOOP_TIMEOUT_MS );
+            xMQTTStatus = MQTT_ProcessLoop( pxMqttContext );
 
             if( xMQTTStatus != MQTTSuccess )
             {
@@ -972,13 +968,12 @@ BaseType_t xPublishToTopic( MQTTContext_t * pxMqttContext,
 
 /*-----------------------------------------------------------*/
 
-BaseType_t xProcessLoop( MQTTContext_t * pxMqttContext,
-                         uint32_t ulTimeoutMs )
+BaseType_t xProcessLoop( MQTTContext_t * pxMqttContext )
 {
     BaseType_t xReturnStatus = pdFAIL;
     MQTTStatus_t xMQTTStatus = MQTTSuccess;
 
-    xMQTTStatus = MQTT_ProcessLoop( pxMqttContext, ulTimeoutMs );
+    xMQTTStatus = MQTT_ProcessLoop( pxMqttContext );
 
     if( xMQTTStatus != MQTTSuccess )
     {

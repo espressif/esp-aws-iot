@@ -129,11 +129,6 @@ extern const char pcAwsCodeSigningCertPem[] asm("_binary_aws_codesign_crt_start"
 #define MQTT_KEEP_ALIVE_INTERVAL_SECONDS    ( 60U )
 
 /**
- * @brief Timeout for MQTT_ProcessLoop function in milliseconds.
- */
-#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 1500U )
-
-/**
  * @brief Maximum number or retries to publish a message in case of failures.
  */
 #define MQTT_PUBLISH_RETRY_MAX_ATTEMPS      ( 3U )
@@ -880,6 +875,7 @@ static int initializeMqtt( MQTTContext_t * pMqttContext,
     transport.pNetworkContext = pNetworkContext;
     transport.send = espTlsTransportSend;
     transport.recv = espTlsTransportRecv;
+    transport.writev = NULL;
 
     /* Fill the values for network buffer. */
     networkBuffer.pBuffer = otaNetworkBuffer;
@@ -1342,10 +1338,10 @@ static OtaMqttStatus_t mqttPublish( const char * const pacTopic,
             if( qos == 1 )
             {
                 /* Loop to receive packet from transport interface. */
-                mqttStatus = MQTT_ReceiveLoop( &mqttContext, MQTT_PROCESS_LOOP_TIMEOUT_MS );
+                mqttStatus = MQTT_ReceiveLoop( &mqttContext );
             }
 
-            if( mqttStatus != MQTTSuccess )
+            if( mqttStatus != MQTTSuccess && mqttStatus != MQTTNeedMoreBytes )
             {
                 /* Generate a random number and get back-off value (in milliseconds) for the next connection retry. */
                 backoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &reconnectParams, generateRandomNumber(), &nextRetryBackOff );
@@ -1596,7 +1592,7 @@ static int startOTADemo( void )
                 if( pthread_mutex_lock( &mqttMutex ) == 0 )
                 {
                     /* Loop to receive packet from transport interface. */
-                    mqttStatus = MQTT_ProcessLoop( &mqttContext, MQTT_PROCESS_LOOP_TIMEOUT_MS );
+                    mqttStatus = MQTT_ProcessLoop( &mqttContext );
 
                     pthread_mutex_unlock( &mqttMutex );
                 }
@@ -1619,10 +1615,10 @@ static int startOTADemo( void )
                                otaStatistics.otaPacketsDropped ) );
 
                     /* Delay if mqtt process loop is set to zero.*/
-                    if( MQTT_PROCESS_LOOP_TIMEOUT_MS > 0 )
-                    {
-                        vTaskDelay( OTA_EXAMPLE_LOOP_SLEEP_PERIOD_MS/portTICK_PERIOD_MS );
-                    }
+                    // if( MQTT_PROCESS_LOOP_TIMEOUT_MS > 0 )
+                    // {
+                    //     vTaskDelay( OTA_EXAMPLE_LOOP_SLEEP_PERIOD_MS/portTICK_PERIOD_MS );
+                    // }
                 }
                 else
                 {
