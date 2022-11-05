@@ -522,7 +522,7 @@ static void updateAcceptedHandler( MQTTPublishInfo_t * pPublishInfo )
         /* Convert the code to an unsigned integer value. */
         receivedToken = ( uint32_t ) strtoul( outValue, NULL, 10 );
 
-        LogInfo( ( "receivedToken:%lu, clientToken:%lu \r\n", receivedToken, clientToken ) );
+        LogInfo( ( "receivedToken:%"PRIu32", clientToken:%"PRIu32" \r\n", receivedToken, clientToken ) );
 
         /* If the clientToken in this update/accepted message matches the one we
          * published before, it means the device shadow has accepted our latest
@@ -530,11 +530,11 @@ static void updateAcceptedHandler( MQTTPublishInfo_t * pPublishInfo )
         if( receivedToken == clientToken )
         {
             LogInfo( ( "Received response from the device shadow. Previously published "
-                       "update with clientToken=%lu has been accepted. ", clientToken ) );
+                       "update with clientToken=%"PRIu32" has been accepted. ", clientToken ) );
         }
         else
         {
-            LogWarn( ( "The received clientToken=%u is not identical with the one=%u we sent "
+            LogWarn( ( "The received clientToken=%"PRIu32" is not identical with the one=%"PRIu32" we sent "
                        , receivedToken, clientToken ) );
         }
     }

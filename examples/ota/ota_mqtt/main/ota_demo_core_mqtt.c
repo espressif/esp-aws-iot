@@ -1,5 +1,5 @@
 /*
- * AWS IoT Device SDK for Embedded C 202103.00
+ * AWS IoT Device SDK for Embedded C 202108.00
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -134,6 +134,11 @@ extern const char pcAwsCodeSigningCertPem[] asm("_binary_aws_codesign_crt_start"
 #define MQTT_PUBLISH_RETRY_MAX_ATTEMPS      ( 3U )
 
 /**
+ * @brief Period for waiting on ack.
+ */
+#define MQTT_ACK_TIMEOUT_MS                 ( 5000U )
+
+/**
  * @brief Period for demo loop sleep in milliseconds.
  */
 #define OTA_EXAMPLE_LOOP_SLEEP_PERIOD_MS    ( 5U )
@@ -232,6 +237,17 @@ extern const char pcAwsCodeSigningCertPem[] asm("_binary_aws_codesign_crt_start"
  */
 #define OTA_TOPIC_STREAM    "streams"
 
+/**
+ * @brief The length of the outgoing publish records array used by the coreMQTT
+ * library to track QoS > 0 packet ACKS for outgoing publishes.
+ */
+#define OUTGOING_PUBLISH_RECORD_LEN    ( 10U )
+
+/**
+ * @brief The length of the incoming publish records array used by the coreMQTT
+ * library to track QoS > 0 packet ACKS for incoming publishes.
+ */
+#define INCOMING_PUBLISH_RECORD_LEN    ( 10U )
 
 /*-----------------------------------------------------------*/
 
@@ -276,7 +292,13 @@ static pthread_mutex_t mqttMutex;
 /**
  * @brief Semaphore for synchronizing buffer operations.
  */
+// static osi_sem_t bufferSemaphore;
 static osi_sem_t bufferSemaphore;
+
+/**
+ * @brief Semaphore for synchronizing wait for ack.
+ */
+static osi_sem_t ackSemaphore;
 
 /**
  * @brief Enum for type of OTA job messages received.
@@ -339,6 +361,24 @@ static OtaAppBuffer_t otaBuffer =
     .pFileBitmap        = bitmap,
     .fileBitmapSize     = OTA_MAX_BLOCK_BITMAP_SIZE
 };
+
+/**
+ * @brief Array to track the outgoing publish records for outgoing publishes
+ * with QoS > 0.
+ *
+ * This is passed into #MQTT_InitStatefulQoS to allow for QoS > 0.
+ *
+ */
+static MQTTPubAckInfo_t pOutgoingPublishRecords[ OUTGOING_PUBLISH_RECORD_LEN ];
+
+/**
+ * @brief Array to track the incoming publish records for incoming publishes
+ * with QoS > 0.
+ *
+ * This is passed into #MQTT_InitStatefulQoS to allow for QoS > 0.
+ *
+ */
+static MQTTPubAckInfo_t pIncomingPublishRecords[ INCOMING_PUBLISH_RECORD_LEN ];
 
 /*-----------------------------------------------------------*/
 
@@ -509,7 +549,7 @@ static uint32_t generateRandomNumber();
  * @return None.
  */
 static void otaAppCallback( OtaJobEvent_t event,
-                            const void * pData );
+                            void * pData );
 
 /**
  * @brief callback to use with the MQTT context to notify incoming packet events.
@@ -596,7 +636,7 @@ OtaEventData_t * otaEventBufferGet( void )
 /*-----------------------------------------------------------*/
 
 static void otaAppCallback( OtaJobEvent_t event,
-                            const void * pData )
+                            void * pData )
 {
     OtaErr_t err = OtaErrUninitialized;
     int ret;
@@ -755,6 +795,7 @@ static void mqttJobCallback( MQTTContext_t * pContext,
             break;
 
         default:
+// %zu
             LogInfo( ( "Received job message %s size %zu.\n\n",
                        pPublishInfo->pTopicName,
                        pPublishInfo->payloadLength ) );
@@ -837,6 +878,7 @@ static void mqttEventCallback( MQTTContext_t * pMqttContext,
             case MQTT_PACKET_TYPE_PUBACK:
                 LogInfo( ( "PUBACK received for packet id %u.\n\n",
                            pDeserializedInfo->packetIdentifier ) );
+//                sem_post( &ackSemaphore );
                 break;
 
             /* Any other packet type is invalid. */
@@ -891,7 +933,21 @@ static int initializeMqtt( MQTTContext_t * pMqttContext,
     if( mqttStatus != MQTTSuccess )
     {
         returnStatus = EXIT_FAILURE;
-        LogError( ( "MQTT init failed: Status = %s.", MQTT_Status_strerror( mqttStatus ) ) );
+        LogError( ( "MQTT_Init failed: Status = %s.", MQTT_Status_strerror( mqttStatus ) ) );
+    }
+    else
+    {
+        mqttStatus = MQTT_InitStatefulQoS( pMqttContext,
+                                           pOutgoingPublishRecords,
+                                           OUTGOING_PUBLISH_RECORD_LEN,
+                                           pIncomingPublishRecords,
+                                           INCOMING_PUBLISH_RECORD_LEN );
+
+        if( mqttStatus != MQTTSuccess )
+        {
+            returnStatus = EXIT_FAILURE;
+            LogError( ( "MQTT_InitStatefulQoS failed: Status = %s.", MQTT_Status_strerror( mqttStatus ) ) );
+        }
     }
 
     return returnStatus;
@@ -1001,7 +1057,8 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
                 LogWarn( ( "Connection to the broker failed. Retrying connection "
                            "after %hu ms backoff.",
                            ( unsigned short ) nextRetryBackOff ) );
-                vTaskDelay( nextRetryBackOff/portTICK_PERIOD_MS );
+                Clock_SleepMs( nextRetryBackOff );
+// vTaskDelay( nextRetryBackOff/portTICK_PERIOD_MS );
             }
         }
     } while( ( tlsStatus != TLS_TRANSPORT_SUCCESS ) && ( backoffAlgStatus == BackoffAlgorithmSuccess ) );
@@ -1289,9 +1346,9 @@ static OtaMqttStatus_t mqttSubscribe( const char * pTopicFilter,
         LogInfo( ( "SUBSCRIBE topic %.*s to broker.\n\n",
                    topicFilterLength,
                    pTopicFilter ) );
-    }
 
-    registerSubscriptionManagerCallback( pTopicFilter, topicFilterLength );
+        registerSubscriptionManagerCallback( pTopicFilter, topicFilterLength );
+    }
 
     return otaRet;
 }
@@ -1341,7 +1398,7 @@ static OtaMqttStatus_t mqttPublish( const char * const pacTopic,
                 mqttStatus = MQTT_ReceiveLoop( &mqttContext );
             }
 
-            if( mqttStatus != MQTTSuccess && mqttStatus != MQTTNeedMoreBytes )
+            if( mqttStatus != MQTTSuccess )
             {
                 /* Generate a random number and get back-off value (in milliseconds) for the next connection retry. */
                 backoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &reconnectParams, generateRandomNumber(), &nextRetryBackOff );
@@ -1425,14 +1482,14 @@ static OtaMqttStatus_t mqttUnsubscribe( const char * pTopicFilter,
 
     if( mqttStatus != MQTTSuccess )
     {
-        LogError( ( "Failed to send SUBSCRIBE packet to broker with error = %u.",
+        LogError( ( "Failed to send UNSUBSCRIBE packet to broker with error = %u.",
                     mqttStatus ) );
 
         otaRet = OtaMqttUnsubscribeFailed;
     }
     else
     {
-        LogInfo( ( "SUBSCRIBE topic %.*s to broker.\n\n",
+        LogInfo( ( "UNSUBSCRIBE topic %.*s to broker.\n\n",
                    topicFilterLength,
                    pTopicFilter ) );
     }
@@ -1442,7 +1499,7 @@ static OtaMqttStatus_t mqttUnsubscribe( const char * pTopicFilter,
 
 /*-----------------------------------------------------------*/
 
-static void setOtaInterfaces(OtaInterfaces_t* pOtaInterfaces)
+static void setOtaInterfaces( OtaInterfaces_t * pOtaInterfaces )
 {
     /* Initialize OTA library OS Interface. */
     pOtaInterfaces->os.event.init = OtaInitEvent_FreeRTOS;
@@ -1470,7 +1527,6 @@ static void setOtaInterfaces(OtaInterfaces_t* pOtaInterfaces)
     pOtaInterfaces->pal.abort = otaPal_Abort;
     pOtaInterfaces->pal.createFile = otaPal_CreateFileForRx;
 }
-
 
 /*-----------------------------------------------------------*/
 
@@ -1504,6 +1560,9 @@ static int startOTADemo( void )
 
     /* OTA Agent thread handle.*/
     pthread_t threadHandle;
+
+    /* Status return from call to pthread_join. */
+    int returnJoin = 0;
 
     /* OTA interface context required for library interface functions.*/
     OtaInterfaces_t otaInterfaces;
@@ -1567,9 +1626,7 @@ static int startOTADemo( void )
             if( mqttSessionEstablished != true )
             {
                 /* Connect to MQTT broker and create MQTT connection. */
-                returnStatus = establishConnection();
-
-                if( returnStatus == EXIT_SUCCESS )
+                if( EXIT_SUCCESS == establishConnection() )
                 {
                     /* Check if OTA process was suspended and resume if required. */
                     if( state == OtaAgentStateSuspended )
@@ -1603,7 +1660,7 @@ static int startOTADemo( void )
                                 strerror( errno ) ) );
                 }
 
-                if( mqttStatus == MQTTSuccess )
+                if( ( mqttStatus == MQTTSuccess ) || ( mqttStatus == MQTTNeedMoreBytes ) )
                 {
                     /* Get OTA statistics for currently executing job. */
                     OTA_GetStatistics( &otaStatistics );
@@ -1614,11 +1671,8 @@ static int startOTADemo( void )
                                otaStatistics.otaPacketsProcessed,
                                otaStatistics.otaPacketsDropped ) );
 
-                    /* Delay if mqtt process loop is set to zero.*/
-                    // if( MQTT_PROCESS_LOOP_TIMEOUT_MS > 0 )
-                    // {
-                    //     vTaskDelay( OTA_EXAMPLE_LOOP_SLEEP_PERIOD_MS/portTICK_PERIOD_MS );
-                    // }
+                    /* Delay to allow data to buffer for MQTT_ProcessLoop. */
+                    Clock_SleepMs( OTA_EXAMPLE_LOOP_SLEEP_PERIOD_MS );
                 }
                 else
                 {
@@ -1638,7 +1692,7 @@ static int startOTADemo( void )
                         while( ( ( state = OTA_GetState() ) != OtaAgentStateSuspended ) && ( suspendTimeout > 0 ) )
                         {
                             /* Wait for OTA Library state to suspend */
-                            vTaskDelay( OTA_EXAMPLE_TASK_DELAY_MS/portTICK_PERIOD_MS );
+                            Clock_SleepMs( OTA_EXAMPLE_TASK_DELAY_MS );
                             suspendTimeout -= OTA_EXAMPLE_TASK_DELAY_MS;
                         }
                     }
@@ -1654,13 +1708,18 @@ static int startOTADemo( void )
 
     /****************************** Wait for OTA Thread. ******************************/
 
-    returnStatus = pthread_join( threadHandle, NULL );
-
-    if( returnStatus != 0 )
+    if( returnStatus == EXIT_SUCCESS )
     {
-        LogError( ( "Failed to join thread"
-                    ",error code = %d",
-                    returnStatus ) );
+        returnJoin = pthread_join( threadHandle, NULL );
+
+        if( returnJoin != 0 )
+        {
+            LogError( ( "Failed to join thread"
+                        ",error code = %d",
+                        returnJoin ) );
+
+            returnStatus = EXIT_FAILURE;
+        }
     }
 
     return returnStatus;
@@ -1689,6 +1748,7 @@ int aws_iot_demo_main( int argc,
 
     /* Semaphore initialization flag. */
     bool bufferSemInitialized = false;
+    bool ackSemInitialized = false;
     bool mqttMutexInitialized = false;
 
     /* Maximum time in milliseconds to wait before exiting demo . */
@@ -1706,6 +1766,20 @@ int aws_iot_demo_main( int argc,
     else
     {
         bufferSemInitialized = true;
+    }
+
+    /* Initialize semaphore for ack. */
+    if( osi_sem_new( &ackSemaphore, 0x7FFFU, 0 ) != 0 )
+    {
+        LogError( ( "Failed to initialize ack semaphore"
+                    ",errno=%s",
+                    strerror( errno ) ) );
+
+        returnStatus = EXIT_FAILURE;
+    }
+    else
+    {
+        ackSemInitialized = true;
     }
 
     /* Initialize mutex for coreMQTT APIs. */
@@ -1751,6 +1825,19 @@ int aws_iot_demo_main( int argc,
         }
     }
 
+    if( ackSemInitialized == true )
+    {
+        /* Cleanup semaphore created for ack. */
+        if( osi_sem_free( &ackSemaphore ) != 0 )
+        {
+            LogError( ( "Failed to destroy ack semaphore"
+                        ",errno=%s",
+                        strerror( errno ) ) );
+
+            returnStatus = EXIT_FAILURE;
+        }
+    }
+
     if( mqttMutexInitialized == true )
     {
         /* Cleanup mutex created for MQTT operations. */
@@ -1767,7 +1854,7 @@ int aws_iot_demo_main( int argc,
     /* Wait and log message before exiting demo. */
     while( waitTimeoutMs > 0 )
     {
-        vTaskDelay( OTA_EXAMPLE_TASK_DELAY_MS/portTICK_PERIOD_MS );
+        Clock_SleepMs( OTA_EXAMPLE_TASK_DELAY_MS );
         waitTimeoutMs -= OTA_EXAMPLE_TASK_DELAY_MS;
 
         LogError( ( "Exiting demo in %d sec", waitTimeoutMs / 1000 ) );
