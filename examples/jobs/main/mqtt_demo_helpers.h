@@ -1,5 +1,5 @@
 /*
- * FreeRTOS V202107.00
+ * AWS IoT Device SDK for Embedded C 202103.00
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -18,14 +18,13 @@
  * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * https://www.FreeRTOS.org
- * https://github.com/FreeRTOS
- *
  */
 
-#ifndef MQTT_DEMO_HELPERS_H
-#define MQTT_DEMO_HELPERS_H
+#ifndef MQTT_DEMO_HELPERS_H_
+#define MQTT_DEMO_HELPERS_H_
+
+/* Include Demo Config as the first non-system header. */
+#include "demo_config.h"
 
 /* MQTT API header. */
 #include "core_mqtt.h"
@@ -34,107 +33,89 @@
 #include "network_transport.h"
 
 /**
- * @brief Timeout for MQTT_ProcessLoop in milliseconds.
+ * @brief Timeout for MQTT_ProcessLoop function in milliseconds.
  */
-#define mqttexamplePROCESS_LOOP_TIMEOUT_MS           ( 1500U )
+#define MQTT_PROCESS_LOOP_TIMEOUT_MS        ( 1500U )
 
 /**
  * @brief Establish a MQTT connection.
  *
- * @param[in, out] pxMqttContext The memory for the MQTTContext_t that will be used for the
- * MQTT connection.
- * @param[out] pxNetworkContext The memory for the NetworkContext_t required for the
- * MQTT connection.
- * @param[in] pxNetworkBuffer The buffer space for initializing the @p pxMqttContext MQTT
- * context used in the MQTT connection.
- * @param[in] eventCallback The callback function used to receive incoming
+ * @param[in] appCallback The callback function used to receive incoming
  * publishes and incoming acks from MQTT library.
  *
- * @return The status of the final connection attempt.
+ * @return EXIT_SUCCESS if an MQTT session is established;
+ * EXIT_FAILURE otherwise.
  */
-BaseType_t xEstablishMqttSession( MQTTContext_t * pxMqttContext,
-                                  NetworkContext_t * pxNetworkContext,
-                                  MQTTFixedBuffer_t * pxNetworkBuffer,
-                                  MQTTEventCallback_t eventCallback );
+int32_t EstablishMqttSession( MQTTEventCallback_t eventCallback );
 
 /**
  * @brief Handle the incoming packet if it's not related to the device shadow.
  *
- * @param[in] pxPacketInfo Packet Info pointer for the incoming packet.
- * @param[in] usPacketIdentifier Packet identifier of the incoming packet.
+ * @param[in] pPacketInfo Packet Info pointer for the incoming packet.
+ * @param[in] packetIdentifier Packet identifier of the incoming packet.
  */
-void vHandleOtherIncomingPacket( MQTTPacketInfo_t * pxPacketInfo,
-                                 uint16_t usPacketIdentifier );
+void HandleOtherIncomingPacket( MQTTPacketInfo_t * pPacketInfo,
+                                uint16_t packetIdentifier );
 
 /**
  * @brief Close the MQTT connection.
  *
- * @param[in, out] pxMqttContext The MQTT context for the MQTT connection to close.
- * @param[in, out] pxNetworkContext The network context for the TLS session to
- * terminate.
- *
- * @return pdPASS if DISCONNECT was successfully sent;
- * pdFAIL otherwise.
+ * @return EXIT_SUCCESS if DISCONNECT was successfully sent;
+ * EXIT_FAILURE otherwise.
  */
-BaseType_t xDisconnectMqttSession( MQTTContext_t * pxMqttContext,
-                                   NetworkContext_t * pxNetworkContext );
+int32_t DisconnectMqttSession( void );
 
 /**
  * @brief Subscribe to a MQTT topic filter.
  *
- * @param[in] pxMqttContext The MQTT context for the MQTT connection.
- * @param[in] pcTopicFilter Pointer to the shadow topic buffer.
- * @param[in] usTopicFilterLength Indicates the length of the shadow
+ * @param[in] pTopicFilter Pointer to the shadow topic buffer.
+ * @param[in] topicFilterLength Indicates the length of the shadow
  * topic buffer.
  *
- * @return pdPASS if SUBSCRIBE was successfully sent;
- * pdFAIL otherwise.
+ * @return EXIT_SUCCESS if SUBSCRIBE was successfully sent;
+ * EXIT_FAILURE otherwise.
  */
-BaseType_t xSubscribeToTopic( MQTTContext_t * pxMqttContext,
-                              const char * pcTopicFilter,
-                              uint16_t usTopicFilterLength );
+int32_t SubscribeToTopic( const char * pTopicFilter,
+                          uint16_t topicFilterLength );
 
 /**
  * @brief Sends an MQTT UNSUBSCRIBE to unsubscribe from the shadow
  * topic.
  *
- * @param[in] pxMqttContext The MQTT context for the MQTT connection.
- * @param[in] pcTopicFilter Pointer to the MQTT topic filter.
- * @param[in] usTopicFilterLength Indicates the length of the topic filter.
+ * @param[in] pTopicFilter Pointer to the shadow topic buffer.
+ * @param[in] topicFilterLength Indicates the length of the shadow
+ * topic buffer.
  *
- * @return pdPASS if UNSUBSCRIBE was successfully sent;
- * pdFAIL otherwise.
+ * @return EXIT_SUCCESS if UNSUBSCRIBE was successfully sent;
+ * EXIT_FAILURE otherwise.
  */
-BaseType_t xUnsubscribeFromTopic( MQTTContext_t * pxMqttContext,
-                                  const char * pcTopicFilter,
-                                  uint16_t usTopicFilterLength );
+int32_t UnsubscribeFromTopic( const char * pTopicFilter,
+                              uint16_t topicFilterLength );
 
 /**
  * @brief Publish a message to a MQTT topic.
  *
- * @param[in] pxMqttContext The MQTT context for the MQTT connection.
- * @param[in] pcTopicFilter Points to the topic.
+ * @param[in] pTopicFilter Points to the topic.
  * @param[in] topicFilterLength The length of the topic.
- * @param[in] pcPayload Points to the payload.
+ * @param[in] pPayload Points to the payload.
  * @param[in] payloadLength The length of the payload.
  *
- * @return pdPASS if PUBLISH was successfully sent;
- * pdFAIL otherwise.
+ * @return EXIT_SUCCESS if PUBLISH was successfully sent;
+ * EXIT_FAILURE otherwise.
  */
-BaseType_t xPublishToTopic( MQTTContext_t * pxMqttContext,
-                            const char * pcTopicFilter,
-                            int32_t topicFilterLength,
-                            const char * pcPayload,
-                            size_t payloadLength );
+int32_t PublishToTopic( const char * pTopicFilter,
+                        int32_t topicFilterLength,
+                        const char * pPayload,
+                        size_t payloadLength );
 
 /**
- * @brief Invoke the core MQTT library's process loop function.
+ * @brief Call #MQTT_ProcessLoop in a loop for the duration of a timeout or
+ * #MQTT_ProcessLoop returns a failure.
  *
- * @param[in] pxMqttContext The MQTT context for the MQTT connection.
+ * @param[in] ulTimeoutMs Duration to call #MQTT_ProcessLoop for.
  *
- * @return pdPASS if process loop was successful;
- * pdFAIL otherwise.
+ * @return Returns the return value of the last call to #MQTT_ProcessLoop.
  */
-BaseType_t xProcessLoop( MQTTContext_t * pxMqttContext );
+MQTTStatus_t processLoopWithTimeout( uint32_t ulTimeoutMs );
 
-#endif /* ifndef MQTT_DEMO_HELPERS_H */
+#endif /* ifndef SHADOW_DEMO_HELPERS_H_ */
