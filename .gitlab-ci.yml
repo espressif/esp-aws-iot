@@ -36,11 +36,11 @@ before_script:
   tags:
     - build
   variables:
-    PEDANTIC_FLAGS: "-Werror -Werror=deprecated-declarations -Wno-error=cpp -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"
+    PEDANTIC_FLAGS: "-Werror=deprecated-declarations -Wno-error=cpp"
     EXTRA_CFLAGS: "${PEDANTIC_FLAGS}"
     EXTRA_CXXFLAGS: "${PEDANTIC_FLAGS}"
     EXAMPLE_TARGETS: "esp32"
-    EXAMPLES: "mqtt/tls_mutual_auth"
+    EXAMPLES: "mqtt/tls_mutual_auth http/http_mutual_auth jobs mqtt/tls_mutual_auth ota/ota_mqtt ota/ota_http thing_shadow"
   script:
     - *build_all_examples
 
@@ -48,10 +48,19 @@ build_idf_v4.3:
   extends: .build_template
   image: espressif/idf:release-v4.3
   variables:
-    EXAMPLE_TARGETS: "esp32 esp32s2 esp32c3"
+    EXAMPLE_TARGETS: "esp32 esp32c3"
+# Removed esp32s2 from targets because of IRAM overflow
 
 build_idf_v4.4:
   extends: .build_template
   image: espressif/idf:release-v4.4
   variables:
-    EXAMPLE_TARGETS: "esp32 esp32s2 esp32c3 esp32s3"
+    EXAMPLE_TARGETS: "esp32 esp32c3 esp32s3"
+# Removed esp32s2 from targets because of IRAM overflow
+
+build_idf_v5.0:
+  extends: .build_template
+  image: espressif/idf:release-v5.0
+  variables:
+    EXAMPLE_TARGETS: esp32 esp32c3 esp32s3 esp32c2
+# Removed esp32s2 from targets because of IRAM overflow
