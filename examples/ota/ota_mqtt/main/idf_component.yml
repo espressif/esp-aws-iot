@@ -1,0 +1,6 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/cbor:
+    version: ">=0.5.4,<1.0.0"
+    rules:
+      - if: "idf_version >=5.0"

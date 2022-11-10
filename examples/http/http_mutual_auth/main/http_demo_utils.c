@@ -179,7 +179,7 @@ HTTPStatus_t getUrlPath( const char * pUrl,
         if( parserStatus != 0 )
         {
             LogError( ( "Error parsing the input URL %.*s. Error code: %d.",
-                        ( int32_t ) urlLen,
+                        ( int ) urlLen,
                         pUrl,
                         parserStatus ) );
             httpStatus = HTTPParserInternalError;
@@ -239,7 +239,7 @@ HTTPStatus_t getUrlAddress( const char * pUrl,
         if( parserStatus != 0 )
         {
             LogError( ( "Error parsing the input URL %.*s. Error code: %d.",
-                        ( int32_t ) urlLen,
+                        ( int ) urlLen,
                         pUrl,
                         parserStatus ) );
             httpStatus = HTTPParserInternalError;

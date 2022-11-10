@@ -53,6 +53,7 @@
 
 /* POSIX includes. */
 #include <unistd.h>
+#include <inttypes.h>
 
 /* Shadow config include. */
 #include "shadow_config.h"
@@ -314,7 +315,7 @@ static void deleteRejectedHandler( MQTTPublishInfo_t * pPublishInfo )
     if( result == JSONSuccess )
     {
         LogInfo( ( "Error code is: %.*s.",
-                   outValueLength,
+                   (int) outValueLength,
                    pOutValue ) );
 
         /* Convert the extracted value to an unsigned integer value. */
@@ -389,7 +390,7 @@ static void updateDeltaHandler( MQTTPublishInfo_t * pPublishInfo )
     if( result == JSONSuccess )
     {
         LogInfo( ( "version: %.*s",
-                   outValueLength,
+                   (int) outValueLength,
                    outValue ) );
 
         /* Convert the extracted value to an unsigned integer value. */
@@ -401,7 +402,7 @@ static void updateDeltaHandler( MQTTPublishInfo_t * pPublishInfo )
         eventCallbackError = true;
     }
 
-    LogInfo( ( "version:%d, currentVersion:%d \r\n", version, currentVersion ) );
+    LogInfo( ( "version:%"PRIu32", currentVersion:%"PRIu32" \r\n", version, currentVersion ) );
 
     /* When the version is much newer than the on we retained, that means the powerOn
      * state is valid for us. */
@@ -433,7 +434,7 @@ static void updateDeltaHandler( MQTTPublishInfo_t * pPublishInfo )
         /* Convert the powerOn state value to an unsigned integer value. */
         newState = ( uint32_t ) strtoul( outValue, NULL, 10 );
 
-        LogInfo( ( "The new power on state newState:%d, currentPowerOnState:%d \r\n",
+        LogInfo( ( "The new power on state newState:%"PRIu32", currentPowerOnState:%"PRIu32" \r\n",
                    newState, currentPowerOnState ) );
 
         if( newState != currentPowerOnState )
@@ -515,13 +516,13 @@ static void updateAcceptedHandler( MQTTPublishInfo_t * pPublishInfo )
 
     if( result == JSONSuccess )
     {
-        LogInfo( ( "clientToken: %.*s", outValueLength,
+        LogInfo( ( "clientToken: %.*s", (int) outValueLength,
                    outValue ) );
 
         /* Convert the code to an unsigned integer value. */
         receivedToken = ( uint32_t ) strtoul( outValue, NULL, 10 );
 
-        LogInfo( ( "receivedToken:%d, clientToken:%u \r\n", receivedToken, clientToken ) );
+        LogInfo( ( "receivedToken:%"PRIu32", clientToken:%"PRIu32" \r\n", receivedToken, clientToken ) );
 
         /* If the clientToken in this update/accepted message matches the one we
          * published before, it means the device shadow has accepted our latest
@@ -529,11 +530,11 @@ static void updateAcceptedHandler( MQTTPublishInfo_t * pPublishInfo )
         if( receivedToken == clientToken )
         {
             LogInfo( ( "Received response from the device shadow. Previously published "
-                       "update with clientToken=%u has been accepted. ", clientToken ) );
+                       "update with clientToken=%"PRIu32" has been accepted. ", clientToken ) );
         }
         else
         {
-            LogWarn( ( "The received clientToken=%u is not identical with the one=%u we sent "
+            LogWarn( ( "The received clientToken=%"PRIu32" is not identical with the one=%"PRIu32" we sent "
                        , receivedToken, clientToken ) );
         }
     }
@@ -836,7 +837,7 @@ int aws_iot_demo_main( int argc,
                 if( stateChanged == true )
                 {
                     /* Report the latest power state back to device shadow. */
-                    LogInfo( ( "Report to the state change: %d", currentPowerOnState ) );
+                    LogInfo( ( "Report to the state change: %"PRIu32"", currentPowerOnState ) );
                     ( void ) memset( updateDocument,
                                      0x00,
                                      sizeof( updateDocument ) );

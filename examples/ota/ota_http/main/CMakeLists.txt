@@ -1,7 +1,7 @@
 set(COMPONENT_SRCS 
 	"app_main.c"
 	"ota_demo_core_http.c"
-	"http_demo_utils.c"
+	"http_demo_url_utils.c"
 	"mqtt_subscription_manager.c"
 	)
 

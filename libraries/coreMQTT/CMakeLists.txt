@@ -34,3 +34,7 @@ idf_component_register(
     REQUIRES
         ${COREMQTT_REQUIRES}
 )
+
+set_source_files_properties(
+"${CMAKE_CURRENT_LIST_DIR}/coreMQTT/source/core_mqtt.c"
+PROPERTIES COMPILE_FLAGS -Wno-format)

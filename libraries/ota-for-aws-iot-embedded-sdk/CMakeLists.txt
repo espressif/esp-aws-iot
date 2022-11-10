@@ -29,12 +29,14 @@ set(AWS_OTA_REQUIRES
     esp_rom
     mbedtls
     corePKCS11
+    coreJSON
     esp_common
     spi_flash
     bootloader_support
     efuse
     log
     app_update
+    cbor
 )
 
 idf_component_register(

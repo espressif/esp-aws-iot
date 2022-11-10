@@ -1,5 +1,5 @@
 /*
- * AWS IoT Device SDK for Embedded C 202103.00
+ * AWS IoT Device SDK for Embedded C 202108.00
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -191,7 +191,7 @@ static int32_t connectToServer( NetworkContext_t * pNetworkContext )
      * to the HTTP server as specified in AWS_IOT_ENDPOINT and AWS_HTTPS_PORT
      * in demo_config.h. */
     LogInfo( ( "Establishing a TLS session to %.*s:%d.",
-               ( int32_t ) AWS_IOT_ENDPOINT_LENGTH,
+               ( int ) AWS_IOT_ENDPOINT_LENGTH,
                AWS_IOT_ENDPOINT,
                AWS_HTTPS_PORT ) );
     tlsStatus = xTlsConnect ( pNetworkContext );
@@ -265,14 +265,14 @@ static int32_t sendHttpRequest( const TransportInterface_t * pTransportInterface
         response.bufferLen = USER_BUFFER_LENGTH;
 
         LogInfo( ( "Sending HTTP %.*s request to %.*s%.*s...",
-                   ( int32_t ) requestInfo.methodLen, requestInfo.pMethod,
-                   ( int32_t ) AWS_IOT_ENDPOINT_LENGTH, AWS_IOT_ENDPOINT,
-                   ( int32_t ) requestInfo.pathLen, requestInfo.pPath ) );
+                   ( int ) requestInfo.methodLen, requestInfo.pMethod,
+                   ( int ) AWS_IOT_ENDPOINT_LENGTH, AWS_IOT_ENDPOINT,
+                   ( int ) requestInfo.pathLen, requestInfo.pPath ) );
         LogDebug( ( "Request Headers:\n%.*s\n"
                     "Request Body:\n%.*s\n",
-                    ( int32_t ) requestHeaders.headersLen,
+                    ( int ) requestHeaders.headersLen,
                     ( char * ) requestHeaders.pBuffer,
-                    ( int32_t ) REQUEST_BODY_LENGTH, REQUEST_BODY ) );
+                    ( int ) REQUEST_BODY_LENGTH, REQUEST_BODY ) );
 
         /* Send the request and receive the response. */
         httpStatus = HTTPClient_Send( pTransportInterface,
@@ -294,18 +294,18 @@ static int32_t sendHttpRequest( const TransportInterface_t * pTransportInterface
                    "Response Headers:\n%.*s\n"
                    "Response Status:\n%u\n"
                    "Response Body:\n%.*s\n",
-                   ( int32_t ) AWS_IOT_ENDPOINT_LENGTH, AWS_IOT_ENDPOINT,
-                   ( int32_t ) requestInfo.pathLen, requestInfo.pPath,
-                   ( int32_t ) response.headersLen, response.pHeaders,
+                   ( int ) AWS_IOT_ENDPOINT_LENGTH, AWS_IOT_ENDPOINT,
+                   ( int ) requestInfo.pathLen, requestInfo.pPath,
+                   ( int ) response.headersLen, response.pHeaders,
                    response.statusCode,
-                   ( int32_t ) response.bodyLen, response.pBody ) );
+                   ( int ) response.bodyLen, response.pBody ) );
     }
     else
     {
         LogError( ( "Failed to send HTTP %.*s request to %.*s%.*s: Error=%s.",
-                    ( int32_t ) requestInfo.methodLen, requestInfo.pMethod,
-                    ( int32_t ) AWS_IOT_ENDPOINT_LENGTH, AWS_IOT_ENDPOINT,
-                    ( int32_t ) requestInfo.pathLen, requestInfo.pPath,
+                    ( int ) requestInfo.methodLen, requestInfo.pMethod,
+                    ( int ) AWS_IOT_ENDPOINT_LENGTH, AWS_IOT_ENDPOINT,
+                    ( int ) requestInfo.pathLen, requestInfo.pPath,
                     HTTPClient_strerror( httpStatus ) ) );
     }
 
@@ -367,7 +367,7 @@ int aws_iot_demo_main( int argc,
             /* Log error to indicate connection failure after all
              * reconnect attempts are over. */
             LogError( ( "Failed to connect to HTTP server %.*s.",
-                        ( int32_t ) AWS_IOT_ENDPOINT_LENGTH,
+                        ( int ) AWS_IOT_ENDPOINT_LENGTH,
                         AWS_IOT_ENDPOINT ) );
         }
     }
@@ -379,6 +379,7 @@ int aws_iot_demo_main( int argc,
         transportInterface.recv = espTlsTransportRecv;
         transportInterface.send = espTlsTransportSend;
         transportInterface.pNetworkContext = &networkContext;
+        transportInterface.writev = NULL;
     }
 
     /*********************** Send HTTPS request. ************************/

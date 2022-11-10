@@ -4,5 +4,6 @@
 examples/**/sdkconfig
 examples/**/sdkconfig.old
 examples/**/build
+examples/**/managed_components
 
 **/.DS_Store

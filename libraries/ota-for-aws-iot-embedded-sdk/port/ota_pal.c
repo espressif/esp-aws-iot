@@ -35,7 +35,12 @@
 #include "hal/wdt_hal.h"
 
 #include "esp_partition.h"
-#include "esp_spi_flash.h"
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+    #include "spi_flash_mmap.h"    
+#else
+    #include "esp_spi_flash.h"
+#endif
 #include "esp_image_format.h"
 #include "esp_ota_ops.h"
 #include "aws_esp_ota_ops.h"
@@ -207,7 +212,7 @@ OtaPalStatus_t otaPal_CreateFileForRx( OtaFileContext_t * const pFileContext )
         return OTA_PAL_COMBINE_ERR( OtaPalRxFileCreateFailed, 0 );
     }
 
-    LogInfo( ( "Writing to partition subtype %d at offset 0x%x",
+    LogInfo( ( "Writing to partition subtype %d at offset 0x%"PRIx32"",
                update_partition->subtype, update_partition->address ) );
 
     esp_ota_handle_t update_handle;
@@ -587,7 +592,7 @@ int16_t otaPal_WriteBlock( OtaFileContext_t * const pFileContext,
 
         if( ret != ESP_OK )
         {
-            LogError( ( "Couldn't flash at the offset %d", iOffset ) );
+            LogError( ( "Couldn't flash at the offset %"PRIu32"", iOffset ) );
             return -1;
         }
 
@@ -724,7 +729,7 @@ OtaPalStatus_t otaPal_SetPlatformImageState( OtaFileContext_t * const pFileConte
         }
         else
         {
-            LogWarn( ( "Image not in self test mode %d", ota_flags ) );
+            LogWarn( ( "Image not in self test mode %"PRIu32"", ota_flags ) );
             mainErr = ota_flags == ESP_OTA_IMG_VALID ? OtaPalSuccess : OtaPalCommitFailed;
         }
 
@@ -761,9 +766,9 @@ static const esp_partition_t* get_running_firmware(void)
 {
     const esp_partition_t *configured = esp_ota_get_boot_partition();
     const esp_partition_t *running = esp_ota_get_running_partition();
-    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
+    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08"PRIx32")",
             running->type, running->subtype, running->address);
-    ESP_LOGI(TAG, "Configured partition type %d subtype %d (offset 0x%08x)",
+    ESP_LOGI(TAG, "Configured partition type %d subtype %d (offset 0x%08"PRIx32")",
             configured->type, configured->subtype, configured->address);
     return running;
 }
