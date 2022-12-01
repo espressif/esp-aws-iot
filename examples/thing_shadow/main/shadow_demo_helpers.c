@@ -53,6 +53,10 @@
 /* Clock for timer. */
 #include "clock.h"
 
+#ifdef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+    #include "esp_secure_cert_read.h"    
+#endif
+
 /**
  * These configuration settings are required to run the shadow demo.
  * Throw compilation error if the below configs are not defined.
@@ -62,11 +66,9 @@
     extern const char root_cert_auth_pem_start[] asm("_binary_root_cert_auth_pem_start");
     extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
 #endif
-#ifndef CLIENT_CERT_PATH
+#ifndef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
     extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
     extern const char client_cert_pem_end[]   asm("_binary_client_crt_end");
-#endif
-#ifndef CLIENT_PRIVATE_KEY_PATH
     extern const char client_key_pem_start[] asm("_binary_client_key_start");
     extern const char client_key_pem_end[]   asm("_binary_client_key_end");
 #endif
@@ -391,11 +393,20 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     pNetworkContext->pcClientKeyPem = NULL;
     pNetworkContext->use_secure_element = true;
 #elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    pNetworkContext->pcClientCertPem = client_cert_pem_start;
-    pNetworkContext->pcClientKeyPem = NULL;
-#error "Populate the ds_data structure and remove this line"
-    /* pNetworkContext->ds_data = DS_DATA; */
-    /* The ds_data can be populated using the API's provided by esp_secure_cert_mgr */
+    esp_err_t esp_ret = ESP_FAIL;
+    char *pcClientCertPem_addr = NULL;
+    uint32_t pcClientCertPem_len = 0;
+    esp_ret = esp_secure_cert_get_device_cert(&pcClientCertPem_addr, &pcClientCertPem_len);
+    if (esp_ret != ESP_OK) {
+        LogError( ( "Failed to obtain flash address of device cert") );
+    }
+    pNetworkContext->ds_data = esp_secure_cert_get_ds_ctx();
+    if (pNetworkContext->ds_data != NULL) {
+            pNetworkContext->pcClientCertPem = pcClientCertPem_addr;
+            pNetworkContext->pcClientKeyPem = NULL;
+    } else {
+        LogError( ( "Failed to obtain the ds context") );
+    }
 #else
     pNetworkContext->pcClientCertPem = client_cert_pem_start;
     pNetworkContext->pcClientKeyPem = client_key_pem_start;

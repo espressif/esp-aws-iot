@@ -18,8 +18,7 @@ This framework enables AWS IoT cloud connectivity with ESP32 based platforms usi
   ```
 - Please refer to https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html for setting up ESP-IDF
   - ESP-IDF can be downloaded from https://github.com/espressif/esp-idf/
-  - Please set your branch to `release/v4.3` or `release/v4.4` and pull in the latest changes.
-  - IDF `release/v5.0` is not supported.
+  - Please set your branch to `release/v5.0`, `release/v4.4` or `release/v4.3` and pull in the latest changes.
 - Please refer to [example README](examples/README.md) for more information on setting up examples.
 - For a production-ready starting point for making applications that connect to AWS IoT Core using esp-aws-iot, refer to the [reference example](https://github.com/FreeRTOS/iot-reference-esp32c3).
 - This framework supports multiple ways to securely store the PKI credentials.

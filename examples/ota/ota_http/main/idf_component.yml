@@ -1,5 +1,6 @@
 ## IDF Component Manager Manifest File
 dependencies:
+  espressif/esp_secure_cert_mgr: "^2.0.5"
   espressif/cbor:
     version: ">=0.5.4,<1.0.0"
     rules:
