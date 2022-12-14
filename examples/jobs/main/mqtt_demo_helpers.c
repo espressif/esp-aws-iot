@@ -1068,3 +1068,14 @@ int32_t PublishToTopic( const char * pTopicFilter,
     return returnStatus;
 }
 /*-----------------------------------------------------------*/
+
+MQTTStatus_t processLoop( void )
+{
+    MQTTStatus_t eMqttStatus;
+
+    eMqttStatus = MQTT_ProcessLoop( &mqttContext );
+    
+    return eMqttStatus;
+}
+
+/*-----------------------------------------------------------*/
