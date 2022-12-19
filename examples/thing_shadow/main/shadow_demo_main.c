@@ -55,6 +55,9 @@
 #include <unistd.h>
 #include <inttypes.h>
 
+/* shadow demo helpers header. */
+#include "shadow_demo_helpers.h"
+
 /* Shadow config include. */
 #include "shadow_config.h"
 
@@ -66,9 +69,6 @@
 
 /* Clock for timer. */
 #include "clock.h"
-
-/* shadow demo helpers header. */
-#include "shadow_demo_helpers.h"
 
 /**
  * @brief Format string representing a Shadow document with a "desired" state.
