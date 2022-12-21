@@ -540,7 +540,7 @@ static void prvProcessJobDocument( MQTTPublishInfo_t * pxPublishInfo,
                         if( PublishToTopic( pcTopic,
                                             ulTopicLength,
                                             pcMessage,
-                                            ulMessageLength ) == pdFALSE )
+                                            ulMessageLength ) != EXIT_SUCCESS )
                         {
                             /* Set global flag to terminate demo as PUBLISH operation to execute job failed. */
                             xDemoEncounteredError = true;
@@ -592,10 +592,19 @@ static void prvNextJobHandler( MQTTPublishInfo_t * pxPublishInfo )
                          &pcJobId,
                          &ulJobIdLength ) != JSONSuccess )
         {
-            LogWarn( ( "Failed to parse Job ID in message received from AWS IoT Jobs service: "
-                       "IncomingTopic=%.*s, Payload=%.*s",
-                       pxPublishInfo->topicNameLength, pxPublishInfo->pTopicName,
-                       pxPublishInfo->payloadLength, ( char * ) pxPublishInfo->pPayload ) );
+            /* Ignore timestamp messages that do not contain a Job ID. */
+            if( JSON_Search( ( char * ) pxPublishInfo->pPayload,
+                             pxPublishInfo->payloadLength,
+                             "timestamp",
+                             strlen( "timestamp" ),
+                             &pcJobId,
+                             &ulJobIdLength ) != JSONSuccess )
+            {
+                LogWarn( ( "Failed to parse Job ID in message received from AWS IoT Jobs service: "
+                           "IncomingTopic=%.*s, Payload=%.*s",
+                           pxPublishInfo->topicNameLength, pxPublishInfo->pTopicName,
+                           pxPublishInfo->payloadLength, ( char * ) pxPublishInfo->pPayload ) );
+            }
         }
         else
         {
@@ -938,11 +947,6 @@ void prvJobsDemoTask( void * pvParameters )
                 LogError( ( "All %d demo iterations failed.", JOBS_MAX_DEMO_LOOP_COUNT ) );
                 retryDemoLoop = false;
             }
-        }
-        else
-        {
-            /* Reset the flag for demo retry. */
-            retryDemoLoop = true;
         }
 
         /* Unsubscribe from the NextJobExecutionChanged API topic. */
