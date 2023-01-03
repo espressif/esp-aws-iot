@@ -63,14 +63,14 @@
  */
 
 #ifndef ROOT_CA_CERT_PATH
-    extern const char root_cert_auth_pem_start[] asm("_binary_root_cert_auth_pem_start");
-    extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
+    extern const char root_cert_auth_start[] asm("_binary_root_cert_auth_crt_start");
+    extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 #endif
 #ifndef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
-    extern const char client_cert_pem_end[]   asm("_binary_client_crt_end");
-    extern const char client_key_pem_start[] asm("_binary_client_key_start");
-    extern const char client_key_pem_end[]   asm("_binary_client_key_end");
+    extern const char client_cert_start[] asm("_binary_client_crt_start");
+    extern const char client_cert_end[]   asm("_binary_client_crt_end");
+    extern const char client_key_start[] asm("_binary_client_key_start");
+    extern const char client_key_end[]   asm("_binary_client_key_end");
 #endif
 
 /**
@@ -371,30 +371,34 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     struct timespec tp;
 
     /* Initialize credentials for establishing TLS session. */
-    pNetworkContext->pcServerRootCAPem = root_cert_auth_pem_start;
+    pNetworkContext->pcServerRootCA = root_cert_auth_start;
+    pNetworkContext->pcServerRootCASize = root_cert_auth_end - root_cert_auth_start;
 
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    pNetworkContext->pcClientCertPem = NULL;
-    pNetworkContext->pcClientKeyPem = NULL;
+    pNetworkContext->pcClientCert = NULL;
+    pNetworkContext->pcClientKey = NULL;
     pNetworkContext->use_secure_element = true;
 #elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
     esp_err_t esp_ret = ESP_FAIL;
-    char *pcClientCertPem_addr = NULL;
-    uint32_t pcClientCertPem_len = 0;
-    esp_ret = esp_secure_cert_get_device_cert(&pcClientCertPem_addr, &pcClientCertPem_len);
+    char *pcClientCertAddr = NULL;
+    uint32_t pcClientCertSize = 0;
+    esp_ret = esp_secure_cert_get_device_cert(&pcClientCertAddr, &pcClientCertSize);
     if (esp_ret != ESP_OK) {
         LogError( ( "Failed to obtain flash address of device cert") );
     }
     pNetworkContext->ds_data = esp_secure_cert_get_ds_ctx();
     if (pNetworkContext->ds_data != NULL) {
-            pNetworkContext->pcClientCertPem = pcClientCertPem_addr;
-            pNetworkContext->pcClientKeyPem = NULL;
+            pNetworkContext->pcClientCert = pcClientCertAddr;
+            pNetworkContext->pcClientCertSize = pcClientCertSize;
+            pNetworkContext->pcClientKey = NULL;
     } else {
         LogError( ( "Failed to obtain the ds context") );
     }
 #else
-    pNetworkContext->pcClientCertPem = client_cert_pem_start;
-    pNetworkContext->pcClientKeyPem = client_key_pem_start;
+    pNetworkContext->pcClientCert = client_cert_start;
+    pNetworkContext->pcClientCertSize = client_cert_end - client_cert_start;
+    pNetworkContext->pcClientKey = client_key_start;
+    pNetworkContext->pcClientKeySize = client_key_end - client_key_start;
 #endif
     if( democonfigMQTT_BROKER_PORT == 443 )
     {

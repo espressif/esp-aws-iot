@@ -11,16 +11,10 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
     TlsTransportStatus_t xRet = TLS_TRANSPORT_SUCCESS;
 
     esp_tls_cfg_t xEspTlsConfig = {
-        .cacert_buf = pxNetworkContext->pcServerRootCADer,
-        .cacert_bytes =
-            pxNetworkContext->uxServerRootCALen == 0
-                ? strlen(pxNetworkContext->pcServerRootCAPem) + 1
-                : pxNetworkContext->uxServerRootCALen,
-        .clientcert_buf = pxNetworkContext->pcClientCertDer,
-        .clientcert_bytes =
-            pxNetworkContext->uxClientCertLen == 0
-                ? strlen(pxNetworkContext->pcClientCertPem) + 1
-                : pxNetworkContext->uxClientCertLen,
+        .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCA ),
+        .cacert_bytes = pxNetworkContext->pcServerRootCASize,
+        .clientcert_buf = (const unsigned char*) ( pxNetworkContext->pcClientCert ),
+        .clientcert_bytes = pxNetworkContext->pcClientCertSize,
         .skip_common_name = pxNetworkContext->disableSni,
         .alpn_protos = pxNetworkContext->pAlpnProtos,
 #if CONFIG_CORE_MQTT_USE_SECURE_ELEMENT
@@ -30,11 +24,8 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
 #else
         .use_secure_element = false,
         .ds_data = NULL,
-        .clientkey_buf = pxNetworkContext->pcClientKeyDer,
-        .clientkey_bytes =
-            pxNetworkContext->uxClientKeyLen == 0
-            ? strlen(pxNetworkContext->pcClientKeyPem) + 1
-            : pxNetworkContext->uxClientKeyLen,
+        .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKey ),
+        .clientkey_bytes = pxNetworkContext->pcClientKeySize,
 #endif
         .timeout_ms = 1000,
     };
