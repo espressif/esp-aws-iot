@@ -67,7 +67,7 @@
 /* Include firmware version struct definition. */
 #include "ota_appversion32.h"
 
-#ifdef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+#ifdef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
     #include "esp_secure_cert_read.h"    
 #endif
 
@@ -75,7 +75,7 @@
     extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
     extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 #endif
-#ifndef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+#ifndef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
     extern const char client_cert_start[] asm("_binary_client_crt_start");
     extern const char client_cert_end[] asm("_binary_client_crt_end");
     extern const char client_key_start[] asm("_binary_client_key_start");
@@ -975,30 +975,28 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     pNetworkContext->pcServerRootCA = root_cert_auth_start;
     pNetworkContext->pcServerRootCASize = root_cert_auth_end - root_cert_auth_start;
 
-
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    pNetworkContext->pcClientCert = NULL;
-    pNetworkContext->pcClientKey = NULL;
     pNetworkContext->use_secure_element = true;
-#elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    esp_err_t esp_ret = ESP_FAIL;
-    char *pcClientCertAddr = NULL;
-    uint32_t pcClientCertSize = 0;
-    esp_ret = esp_secure_cert_get_device_cert(&pcClientCertAddr, &pcClientCertSize);
-    if (esp_ret != ESP_OK) {
+
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    if (esp_secure_cert_get_device_cert(&pNetworkContext->pcClientCert, &pNetworkContext->pcClientCertSize) != ESP_OK) {
         LogError( ( "Failed to obtain flash address of device cert") );
+        return EXIT_FAILURE;
     }
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
     pNetworkContext->ds_data = esp_secure_cert_get_ds_ctx();
-    if (pNetworkContext->ds_data != NULL) {
-            pNetworkContext->pcClientCert = pcClientCertAddr;
-            pNetworkContext->pcClientCertSize = pcClientCertSize;
-            pNetworkContext->pcClientKey = NULL;
-    } else {
+    if (pNetworkContext->ds_data == NULL) {
         LogError( ( "Failed to obtain the ds context") );
+        return EXIT_FAILURE;
     }
-#else
-    /* If #CLIENT_USERNAME is defined, username/password is used for authenticating
-     * the client. */
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    if (esp_secure_cert_get_priv_key(&pNetworkContext->pcClientKey, &pNetworkContext->pcClientKeySize) != ESP_OK) {
+        LogError( ( "Failed to obtain flash address of private_key") );
+        return EXIT_FAILURE;
+    }
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
     #ifndef CLIENT_USERNAME
         pNetworkContext->pcClientCert = client_cert_start;
         pNetworkContext->pcClientCertSize = client_cert_end - client_cert_start;
@@ -1006,6 +1004,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
         pNetworkContext->pcClientKeySize = client_key_end - client_key_start;
     #endif
 #endif
+
     /* AWS IoT requires devices to send the Server Name Indication (SNI)
      * extension to the Transport Layer Security (TLS) protocol and provide
      * the complete endpoint address in the host_name field. Details about

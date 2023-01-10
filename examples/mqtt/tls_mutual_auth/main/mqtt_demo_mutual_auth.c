@@ -75,14 +75,40 @@
 /* Clock for timer. */
 #include "clock.h"
 
-#ifdef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+#ifdef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
     #include "esp_secure_cert_read.h"    
 #endif
 
-/**
- * These configuration settings are required to run the mutual auth demo.
- * Throw compilation error if the below configs are not defined.
+#ifndef CLIENT_IDENTIFIER
+    #error "Please define a unique client identifier, CLIENT_IDENTIFIER, in menuconfig"
+#endif
+
+/* The AWS IoT message broker requires either a set of client certificate/private key
+ * or username/password to authenticate the client. */
+#ifdef CLIENT_USERNAME
+/* If a username is defined, a client password also would need to be defined for
+ * client authentication. */
+    #ifndef CLIENT_PASSWORD
+        #error "Please define client password(CLIENT_PASSWORD) in demo_config.h for client authentication based on username/password."
+    #endif
+/* AWS IoT MQTT broker port needs to be 443 for client authentication based on
+ * username/password. */
+    #if AWS_MQTT_PORT != 443
+        #error "Broker port, AWS_MQTT_PORT, should be defined as 443 in demo_config.h for client authentication based on username/password."
+    #endif
+#else /* !CLIENT_USERNAME */
+/*
+ *!!! Please note democonfigCLIENT_PRIVATE_KEY_PEM in used for
+ *!!! convenience of demonstration only.  Production devices should
+ *!!! store keys securely, such as within a secure element.
  */
+    #ifndef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
+        extern const char client_cert_start[] asm("_binary_client_crt_start");
+        extern const char client_cert_end[] asm("_binary_client_crt_end");
+        extern const char client_key_start[] asm("_binary_client_key_start");
+        extern const char client_key_end[] asm("_binary_client_key_end");
+    #endif /* CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR */
+#endif /* CLIENT_USERNAME */
 
 #ifndef ROOT_CA_PEM
     #if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
@@ -93,40 +119,10 @@
     extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 #endif
 
-#ifndef CLIENT_IDENTIFIER
-    #error "Please define a unique client identifier, CLIENT_IDENTIFIER, in menuconfig"
-#endif
-
-/* The AWS IoT message broker requires either a set of client certificate/private key
- * or username/password to authenticate the client. */
-#ifndef CLIENT_USERNAME
-
-/*
- *!!! Please note democonfigCLIENT_PRIVATE_KEY_PEM in used for
- *!!! convenience of demonstration only.  Production devices should
- *!!! store keys securely, such as within a secure element.
+/**
+ * These configuration settings are required to run the mutual auth demo.
+ * Throw compilation error if the below configs are not defined.
  */
-
-    #ifndef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-        extern const char client_cert_start[] asm("_binary_client_crt_start");
-        extern const char client_cert_end[] asm("_binary_client_crt_end");
-        extern const char client_key_start[] asm("_binary_client_key_start");
-        extern const char client_key_end[] asm("_binary_client_key_end");
-    #endif
-#else
-
-/* If a username is defined, a client password also would need to be defined for
- * client authentication. */
-    #ifndef CLIENT_PASSWORD
-        #error "Please define client password(CLIENT_PASSWORD) in demo_config.h for client authentication based on username/password."
-    #endif
-
-/* AWS IoT MQTT broker port needs to be 443 for client authentication based on
- * username/password. */
-    #if AWS_MQTT_PORT != 443
-        #error "Broker port, AWS_MQTT_PORT, should be defined as 443 in demo_config.h for client authentication based on username/password."
-    #endif
-#endif /* ifndef CLIENT_USERNAME */
 
 /**
  * @brief Length of MQTT server host name.
@@ -642,26 +638,27 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     /* If #CLIENT_USERNAME is defined, username/password is used for authenticating
      * the client. */
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    pNetworkContext->pcClientCert = NULL;
-    pNetworkContext->pcClientKey = NULL;
     pNetworkContext->use_secure_element = true;
-#elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    esp_err_t esp_ret = ESP_FAIL;
-    char *pcClientCertAddr = NULL;
-    uint32_t pcClientCertSize = 0;
-    esp_ret = esp_secure_cert_get_device_cert(&pcClientCertAddr, &pcClientCertSize);
-    if (esp_ret != ESP_OK) {
+
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    if (esp_secure_cert_get_device_cert(&pNetworkContext->pcClientCert, &pNetworkContext->pcClientCertSize) != ESP_OK) {
         LogError( ( "Failed to obtain flash address of device cert") );
+        return EXIT_FAILURE;
     }
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
     pNetworkContext->ds_data = esp_secure_cert_get_ds_ctx();
-    if (pNetworkContext->ds_data != NULL) {
-            pNetworkContext->pcClientCert = pcClientCertAddr;
-            pNetworkContext->pcClientCertSize = pcClientCertSize;
-            pNetworkContext->pcClientKey = NULL;
-    } else {
+    if (pNetworkContext->ds_data == NULL) {
         LogError( ( "Failed to obtain the ds context") );
+        return EXIT_FAILURE;
     }
-#else
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    if (esp_secure_cert_get_priv_key(&pNetworkContext->pcClientKey, &pNetworkContext->pcClientKeySize) != ESP_OK) {
+        LogError( ( "Failed to obtain flash address of private_key") );
+        return EXIT_FAILURE;
+    }
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
     #ifndef CLIENT_USERNAME
         pNetworkContext->pcClientCert = client_cert_start;
         pNetworkContext->pcClientCertSize = client_cert_end - client_cert_start;

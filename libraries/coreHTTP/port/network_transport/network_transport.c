@@ -17,16 +17,10 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         .clientcert_bytes = pxNetworkContext->pcClientCertSize,
         .skip_common_name = pxNetworkContext->disableSni,
         .alpn_protos = pxNetworkContext->pAlpnProtos,
-#if CONFIG_CORE_MQTT_USE_SECURE_ELEMENT
-        .use_secure_element = true,
-#elif CONFIG_CORE_MQTT_USE_DS_PERIPHERAL
+        .use_secure_element = pxNetworkContext->use_secure_element,
         .ds_data = pxNetworkContext->ds_data,
-#else
-        .use_secure_element = false,
-        .ds_data = NULL,
         .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKey ),
         .clientkey_bytes = pxNetworkContext->pcClientKeySize,
-#endif
         .timeout_ms = 1000,
     };
 
