@@ -118,4 +118,10 @@ int32_t PublishToTopic( const char * pTopicFilter,
  */
 MQTTStatus_t processLoopWithTimeout( uint32_t ulTimeoutMs );
 
+/**
+ * @brief Call #MQTT_ProcessLoop on the static global MQTT context.
+ * @return Returns the return value #MQTT_ProcessLoop.
+ */
+MQTTStatus_t processLoop( void );
+
 #endif /* ifndef SHADOW_DEMO_HELPERS_H_ */
