@@ -731,7 +731,7 @@ int32_t EstablishMqttSession( MQTTEventCallback_t eventCallback )
     MQTTStatus_t mqttStatus;
     MQTTConnectInfo_t connectInfo;
     MQTTFixedBuffer_t networkBuffer;
-    TransportInterface_t transport;
+    TransportInterface_t transport = { 0 };
     bool createCleanSession = false;
     MQTTContext_t * pMqttContext = &mqttContext;
     NetworkContext_t * pNetworkContext = &networkContext;
