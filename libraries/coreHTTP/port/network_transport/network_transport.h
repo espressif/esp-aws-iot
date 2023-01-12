@@ -6,6 +6,10 @@
 #include "transport_interface.h"
 #include "esp_tls.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 typedef enum TlsTransportStatus
 {
     TLS_TRANSPORT_SUCCESS = 0,              /**< Function successfully completed. */
@@ -58,4 +62,7 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
 int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
     void* pvData, size_t uxDataLen );
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 #endif /* ESP_TLS_TRANSPORT_H */

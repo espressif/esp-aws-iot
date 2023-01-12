@@ -28,6 +28,10 @@
 
 #include "freertos/FreeRTOS.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /**
  * @brief Commonly used buffer sizes for storing cryptographic hash computation
  * results.
@@ -99,5 +103,7 @@ BaseType_t CRYPTO_SignatureVerificationFinal( void * pvContext,
                                               size_t xSignerCertificateLength,
                                               uint8_t * pucSignature,
                                               size_t xSignatureLength );
-
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 #endif /* ifndef __AWS_CRYPTO__H__ */
