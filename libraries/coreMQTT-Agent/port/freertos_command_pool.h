@@ -20,6 +20,10 @@
 /* MQTT agent includes. */
 #include "core_mqtt_agent.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /**
  * @brief Initialize the common task pool. Not thread safe.
  */
@@ -66,4 +70,7 @@ MQTTAgentCommand_t * Agent_GetCommand( uint32_t blockTimeMs );
  */
 bool Agent_ReleaseCommand( MQTTAgentCommand_t * pCommandToRelease );
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 #endif /* FREERTOS_COMMAND_POOL_H */

@@ -28,6 +28,10 @@
 /* Include MQTT agent messaging interface. */
 #include "core_mqtt_agent_message_interface.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /**
  * @ingroup mqtt_agent_struct_types
  * @brief Context with which tasks may deliver messages to the agent.
@@ -67,4 +71,7 @@ bool Agent_MessageReceive( MQTTAgentMessageContext_t * pMsgCtx,
                            MQTTAgentCommand_t ** pReceivedCommand,
                            uint32_t blockTimeMs );
 
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 #endif /* FREERTOS_AGENT_MESSAGE_H */
