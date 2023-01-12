@@ -301,6 +301,11 @@ const AppVersion32_t appFirmwareVersion =
 static StaticSemaphore_t xTlsContextSemaphoreBuffer;
 
 /**
+ * @brief Static buffer for TLS Context Semaphore (For HTTP).
+ */
+static StaticSemaphore_t xTlsContextSemaphoreBufferHTTP;
+
+/**
  * @brief Network connection context used in this demo for MQTT connection.
  */
 static NetworkContext_t networkContextMqtt;
@@ -1313,7 +1318,7 @@ static int32_t connectToS3Server( NetworkContext_t * pNetworkContext,
 
     /* Status returned by OpenSSL transport implementation. */
     TlsTransportStatus_t tlsStatus = TLS_TRANSPORT_SUCCESS;
-
+    pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutexStatic(&xTlsContextSemaphoreBufferHTTP);
     pNetworkContext->disableSni = 0;
 
     /* Initialize TLS credentials. */
