@@ -1,0 +1,23 @@
+menu "Fleet Provisioning"
+
+    menu "Logging"
+
+        config FLEET_PROVISIONING_LOG_ERROR
+            bool "Enable Error Logging"
+            default n
+        
+        config FLEET_PROVISIONING_LOG_WARN
+            bool "Enable Warning Logging"
+            default n
+
+        config FLEET_PROVISIONING_LOG_INFO
+            bool "Enable Info Logging"
+            default y
+
+        config FLEET_PROVISIONING_LOG_DEBUG
+            bool "Enable Debug Logging"
+            default n
+
+    endmenu # Fleet Provisioning Logging
+
+endmenu # Fleet Provisioning

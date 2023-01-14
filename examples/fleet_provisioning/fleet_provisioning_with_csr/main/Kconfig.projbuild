@@ -1,0 +1,68 @@
+menu "Example Configuration"
+
+    config MQTT_CLIENT_IDENTIFIER
+        string "The MQTT client identifier used in this example"
+        default "testClient"
+        help
+            The MQTT client identifier used in this example. Each client identifier must be unique.
+            so edit as required to ensure that no two clients connecting to the same broker use the same client identifier.
+
+    config MQTT_BROKER_ENDPOINT
+        string "Endpoint of the MQTT broker to connect to"
+        default "test.mosquitto.org"
+        help
+            This example can be run with any MQTT broker, that supports server authentication.
+
+    config MQTT_BROKER_PORT
+        int "Port of the MQTT broker use"
+        default 8883
+        help
+            In general, port 8883 is for secured MQTT connections.
+            Port 443 requires use of the ALPN TLS extension with the ALPN protocol name.
+            When using port 8883, ALPN is not required.
+
+    config HARDWARE_PLATFORM_NAME
+        string "The hardware platform"
+        default "ESP32"
+        help
+            The name of the hardware platform the application is running on.
+
+    config MQTT_NETWORK_BUFFER_SIZE
+        int "Size of the network buffer for MQTT packets"
+        range 1024 2048
+        default 1024
+        help
+            Size of the network buffer for MQTT packets.
+
+    config PROVISIONING_TEMPLATE_NAME
+        string "Name of the provisioning template"
+        default "FleetProvisioningDemoTemplate"
+        help
+            Name of the provisioning template to use for the RegisterThing
+            portion of the Fleet Provisioning workflow.
+
+    config DEVICE_SERIAL_NUMBER
+        string "The device serial number"
+        default "0000"
+        help
+            This is sent as a parameter to the provisioning template,
+            which uses it to generate a unique Thing name.
+            This should be unique per device.
+
+    choice EXAMPLE_CHOOSE_PKI_ACCESS_METHOD
+        prompt "Choose PKI credentials access method"
+        default EXAMPLE_USE_PLAIN_FLASH_STORAGE
+        help
+            ESP devices support multiple ways to secure store the PKI credentials.
+            Currently Secure Element (ATECC608A) and DS peripheral are supported.
+            The default behaviour is to access the PKI credentials which are embedded in the binary.
+            Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
+
+        config EXAMPLE_USE_PLAIN_FLASH_STORAGE
+        bool "Use flash storage (default)"
+        help
+            This option expects the Private key and Device certificate to be embedded in the binary.
+            This is the default behaviour.
+    endchoice
+
+endmenu

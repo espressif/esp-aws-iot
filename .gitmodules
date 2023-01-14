@@ -28,3 +28,6 @@
 [submodule "libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk"]
 	path = libraries/Jobs-for-AWS-IoT-embedded-sdk/Jobs-for-AWS-IoT-embedded-sdk
 	url = https://github.com/aws/Jobs-for-AWS-IoT-embedded-sdk.git
+[submodule "libraries/Fleet-Provisioning-for-AWS-IoT-embedded-sdk/Fleet-Provisioning-for-AWS-IoT-embedded-sdk"]
+	path = libraries/Fleet-Provisioning-for-AWS-IoT-embedded-sdk/Fleet-Provisioning-for-AWS-IoT-embedded-sdk
+	url = https://github.com/aws/Fleet-Provisioning-for-AWS-IoT-embedded-sdk

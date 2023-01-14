@@ -40,7 +40,7 @@ before_script:
     EXTRA_CFLAGS: "${PEDANTIC_FLAGS}"
     EXTRA_CXXFLAGS: "${PEDANTIC_FLAGS}"
     EXAMPLE_TARGETS: "esp32"
-    EXAMPLES: "mqtt/tls_mutual_auth http/http_mutual_auth jobs mqtt/tls_mutual_auth ota/ota_mqtt ota/ota_http thing_shadow"
+    EXAMPLES: "mqtt/tls_mutual_auth http/http_mutual_auth jobs mqtt/tls_mutual_auth ota/ota_mqtt ota/ota_http thing_shadow fleet_provisioning/fleet_provisioning_with_csr"
   script:
     - *build_all_examples
 

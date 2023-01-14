@@ -37,10 +37,12 @@ set(COREPKCS_REQUIRES
 idf_component_register(
     SRCS
         ${COREPKCS_SRCS}
+        "${CORE_PKCS11_3RDPARTY_LOCATION}/mbedtls_utils/mbedtls_utils.c"
     INCLUDE_DIRS
         ${COREPKCS_INCLUDE_DIRS}
-    PRIV_INCLUDE_DIRS
         ${CORE_PKCS11_3RDPARTY_LOCATION}/mbedtls_utils
+    PRIV_INCLUDE_DIRS
+        
     REQUIRES
         ${COREPKCS_REQUIRES}
 )
