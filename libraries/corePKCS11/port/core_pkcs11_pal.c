@@ -45,6 +45,8 @@ static const char *TAG = "PKCS11";
 #define pkcs11palFILE_NAME_KEY                   "P11_Key"
 #define pkcs11palFILE_CODE_SIGN_PUBLIC_KEY       "P11_CSK"
 #define pkcs11palFILE_JITP_CERTIFICATE           "P11_JITP"
+#define pkcs11palFILE_NAME_CLAIM_CERTIFICATE     "P11_Claim_Cert"
+#define pkcs11palFILE_NAME_CLAIM_KEY             "P11_Claim_Key"
 
 enum eObjectHandles
 {
@@ -53,7 +55,9 @@ enum eObjectHandles
     eAwsDevicePublicKey,
     eAwsDeviceCertificate,
     eAwsCodeSigningKey,
-    eAwsJITPCertificate
+    eAwsJITPCertificate,
+    eAwsClaimCertificate,
+    eAwsClaimPrivateKey
 };
 
 static StaticSemaphore_t pkcs_pal_lock_buffer;
@@ -163,6 +167,20 @@ void prvLabelToFilenameHandle( uint8_t * pcLabel,
             *pcFileName = pkcs11palFILE_JITP_CERTIFICATE;
             *pHandle = eAwsJITPCertificate;
         }
+        else if( 0 == memcmp( pcLabel,
+                              pkcs11configLABEL_CLAIM_CERTIFICATE,
+                              strlen( (char*)pkcs11configLABEL_CLAIM_CERTIFICATE ) ) )
+        {
+            *pcFileName = pkcs11palFILE_NAME_CLAIM_CERTIFICATE;
+            *pHandle = eAwsClaimCertificate;
+        }
+        else if( 0 == memcmp( pcLabel,
+                              pkcs11configLABEL_CLAIM_PRIVATE_KEY,
+                              strlen( (char*)pkcs11configLABEL_CLAIM_PRIVATE_KEY ) ) )
+        {
+            *pcFileName = pkcs11palFILE_NAME_CLAIM_KEY;
+            *pHandle = eAwsClaimPrivateKey;
+        }
         else
         {
             *pcFileName = NULL;
@@ -264,7 +282,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_FindObject( CK_BYTE_PTR pxLabel,
         size_t required_size = 0;
         err = nvs_get_blob(handle, pcFileName, NULL, &required_size);
         if (err != ESP_OK || required_size == 0) {
-            ESP_LOGE(TAG, "failed nvs get file size %d %d", err, required_size);
+            ESP_LOGE(TAG, "failed nvs get file size %d %d %s", err, required_size, pcFileName);
             xHandle = eInvalidHandle;
         }
         nvs_close(handle);
@@ -346,6 +364,16 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
         pcFileName = pkcs11palFILE_JITP_CERTIFICATE;
         *pIsPrivate = CK_FALSE;
     }
+    else if( xHandle == eAwsClaimCertificate )
+    {
+        pcFileName = pkcs11palFILE_NAME_CLAIM_CERTIFICATE;
+        *pIsPrivate = CK_FALSE;
+    }
+    else if( xHandle == eAwsClaimPrivateKey )
+    {
+        pcFileName = pkcs11palFILE_NAME_CLAIM_KEY;
+        *pIsPrivate = CK_TRUE;
+    }
     else
     {
         ulReturn = CKR_OBJECT_HANDLE_INVALID;
@@ -365,7 +393,7 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
         size_t required_size = 0;
         err = nvs_get_blob(handle, pcFileName, NULL, &required_size);
         if (err != ESP_OK || required_size == 0) {
-            ESP_LOGE(TAG, "failed nvs get file size %d %d", err, required_size);
+            ESP_LOGE(TAG, "failed nvs get file size %d %d %s", err, required_size, pcFileName);
             ulReturn = CKR_OBJECT_HANDLE_INVALID;
             goto done;
         }
