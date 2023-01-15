@@ -589,6 +589,26 @@ static int waitForPacketAck( MQTTContext_t * pMqttContext,
 
 /*-----------------------------------------------------------*/
 
+static void cleanupESPSecureMgrCerts( NetworkContext_t * pNetworkContext )
+{
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    /* Nothing to be freed */
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    esp_secure_cert_free_device_cert(&pNetworkContext->pcClientCert);
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
+    esp_secure_cert_free_ds_ctx(pNetworkContext->ds_data);
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    esp_secure_cert_free_priv_key(&pNetworkContext->pcClientKey);
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
+    /* Nothing to be freed */
+#endif
+    return;
+}
+
+/*-----------------------------------------------------------*/
+
 MQTTStatus_t processLoopWithTimeout( uint32_t ulTimeoutMs )
 {
     uint32_t ulMqttProcessLoopTimeoutTime;
@@ -884,6 +904,7 @@ int32_t DisconnectMqttSession( void )
     }
 
     /* End TLS session, then close TCP connection. */
+    cleanupESPSecureMgrCerts( pNetworkContext );
     ( void ) xTlsDisconnect( pNetworkContext );
 
     return returnStatus;

@@ -602,12 +602,31 @@ static int waitForPacketAck( MQTTContext_t * pMqttContext,
 static MQTTStatus_t processLoopWithTimeout( MQTTContext_t * pMqttContext,
                                             uint32_t ulTimeoutMs );
 
-
 /*-----------------------------------------------------------*/
 
 static uint32_t generateRandomNumber()
 {
     return( rand() );
+}
+
+/*-----------------------------------------------------------*/
+
+static void cleanupESPSecureMgrCerts( NetworkContext_t * pNetworkContext )
+{
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    /* Nothing to be freed */
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    esp_secure_cert_free_device_cert(&pNetworkContext->pcClientCert);
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
+    esp_secure_cert_free_ds_ctx(pNetworkContext->ds_data);
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    esp_secure_cert_free_priv_key(&pNetworkContext->pcClientKey);
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
+    /* Nothing to be freed */
+#endif
+    return;
 }
 
 /*-----------------------------------------------------------*/
@@ -732,6 +751,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
             if( returnStatus == EXIT_FAILURE )
             {
                 /* End TLS session, then close TCP connection. */
+                cleanupESPSecureMgrCerts( pNetworkContext );
                 ( void ) xTlsDisconnect( pNetworkContext );
             }
         }
@@ -1722,6 +1742,7 @@ int aws_iot_demo_main( int argc,
                 returnStatus = subscribePublishLoop( &mqttContext );
 
                 /* End TLS session, then close TCP connection. */
+                cleanupESPSecureMgrCerts( &xNetworkContext );
                 ( void ) xTlsDisconnect( &xNetworkContext );
             }
 

@@ -1355,6 +1355,26 @@ static int establishConnection( void )
 
 /*-----------------------------------------------------------*/
 
+static void cleanupESPSecureMgrCerts( NetworkContext_t * pNetworkContext )
+{
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    /* Nothing to be freed */
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    esp_secure_cert_free_device_cert(&pNetworkContext->pcClientCert);
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
+    esp_secure_cert_free_ds_ctx(pNetworkContext->ds_data);
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    esp_secure_cert_free_priv_key(&pNetworkContext->pcClientKey);
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
+    /* Nothing to be freed */
+#endif
+    return;
+}
+
+/*-----------------------------------------------------------*/
+
 static void disconnect( void )
 {
     /* Disconnect from broker. */
@@ -1385,6 +1405,7 @@ static void disconnect( void )
     }
 
     /* End TLS session, then close TCP connection. */
+    cleanupESPSecureMgrCerts( &networkContextMqtt );
     ( void ) xTlsDisconnect( &networkContextMqtt );
 }
 
@@ -1701,6 +1722,7 @@ static OtaHttpStatus_t httpRequest( uint32_t rangeStart,
     if( reconnectRequired == true )
     {
         /* End TLS session, then close TCP connection. */
+        cleanupESPSecureMgrCerts( &networkContextHttp );
         ( void ) xTlsDisconnect( &networkContextHttp );
 
         /* Try establishing connection to S3 server again. */
@@ -2314,6 +2336,7 @@ int aws_iot_demo_main( int argc,
     disconnect();
 
     /* Disconnect from S3 and close connection. */
+    cleanupESPSecureMgrCerts( &networkContextHttp );
     xTlsDisconnect( &networkContextHttp );
 
     if( bufferSemInitialized == true )
