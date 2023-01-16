@@ -39,7 +39,8 @@ menu "Example Configuration"
         default EXAMPLE_USE_PLAIN_FLASH_STORAGE
         help
             ESP devices support multiple ways to secure store the PKI credentials.
-            Currently Secure Element (ATECC608A) and DS peripheral are supported.
+            Currently Secure Element (ATECC608A) and DS peripheral
+            (using ESP Secure Cert Manager) are supported.
             The default behaviour is to access the PKI credentials which are embedded in the binary.
             Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
 
@@ -47,7 +48,7 @@ menu "Example Configuration"
         config EXAMPLE_USE_SECURE_ELEMENT
         bool "Use secure element (ATECC608A)"
         depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
-        # To confirm that we are satisfying the dependancies of secure element
+        # To confirm that we are satisfying the dependencies of secure element
         select ESP_TLS_USE_SECURE_ELEMENT
         select CORE_HTTP_USE_SECURE_ELEMENT
         select CORE_MQTT_USE_SECURE_ELEMENT
@@ -58,8 +59,8 @@ menu "Example Configuration"
 
         config EXAMPLE_USE_DS_PERIPHERAL
         bool "Use DS peripheral"
-        depends on ESP_TLS_USING_MBEDTLS && SOC_DIG_SIGN_SUPPORTED
-        # To confirm that we are satisfying the dependancies of ds peripheral
+        depends on ESP_TLS_USING_MBEDTLS && !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32C2
+        # To confirm that we are satisfying the dependencies of ds peripheral
         select ESP_TLS_USE_DS_PERIPHERAL
         select CORE_HTTP_USE_DS_PERIPHERAL
         select CORE_MQTT_USE_DS_PERIPHERAL
