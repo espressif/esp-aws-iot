@@ -360,7 +360,7 @@ static bool readFile( const char * path,
         {
             if( length > bufferLength )
             {
-                LogError( ( "Buffer too small for file. Buffer size: %ld. Required size: %ld.",
+                LogError( ( "Buffer too small for file. Buffer size: %d. Required size: %d.",
                             bufferLength, length ) );
                 status = false;
             }
@@ -829,7 +829,7 @@ bool loadClaimCredentials( CK_SESSION_HANDLE p11Session,
     mbedtls_ctr_drbg_init(&ctr_drbg);
     int mbedtls_ctr_ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
     if (mbedtls_ctr_ret != 0) {
-        LogError( ( "mbedtls_ctr_drbg_seed returned -0x%04x\n", ret ) );
+        LogError( ( "mbedtls_ctr_drbg_seed returned -0x%04x\n", mbedtls_ctr_ret ) );
         return false;
     }
 #endif
