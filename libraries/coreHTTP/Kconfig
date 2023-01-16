@@ -4,7 +4,7 @@ menu "coreHTTP"
 
         config DEVICE_SHADOW_LOG_ERROR
             bool "Enable Error Logging"
-            default n
+            default y
         
         config DEVICE_SHADOW_LOG_WARN
             bool "Enable Warning Logging"

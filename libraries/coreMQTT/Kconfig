@@ -97,7 +97,7 @@ menu "coreMQTT"
 
         config CORE_MQTT_LOG_ERROR
             bool "Enable Error Logging"
-            default n
+            default y
         
         config CORE_MQTT_LOG_WARN
             bool "Enable Warning Logging"
