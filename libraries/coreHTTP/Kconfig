@@ -4,7 +4,7 @@ menu "coreHTTP"
 
         config DEVICE_SHADOW_LOG_ERROR
             bool "Enable Error Logging"
-            default n
+            default y
         
         config DEVICE_SHADOW_LOG_WARN
             bool "Enable Warning Logging"
@@ -19,20 +19,5 @@ menu "coreHTTP"
             default n
 
     endmenu # coreHTTP Logging
-
-    config CORE_HTTP_USE_SECURE_ELEMENT
-    bool
-    depends on ESP_TLS_USE_SECURE_ELEMENT
-    help
-        Enable the use of secure element for the component.
-        The esp-cryptoauthlib component is required for enabling
-        this option.
-
-    config CORE_HTTP_USE_DS_PERIPHERAL
-    bool
-    depends on ESP_TLS_USE_DS_PERIPHERAL
-    help
-        Enable the use of DS peripheral for the component.
-        The DS peripheral on the device must be provisioned first to use this option.
 
 endmenu # coreHTTP

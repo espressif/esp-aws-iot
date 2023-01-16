@@ -4,7 +4,7 @@ menu "Fleet Provisioning"
 
         config FLEET_PROVISIONING_LOG_ERROR
             bool "Enable Error Logging"
-            default n
+            default y
         
         config FLEET_PROVISIONING_LOG_WARN
             bool "Enable Warning Logging"

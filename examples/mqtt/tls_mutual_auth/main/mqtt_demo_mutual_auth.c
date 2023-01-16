@@ -75,22 +75,8 @@
 /* Clock for timer. */
 #include "clock.h"
 
-#ifdef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+#ifdef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
     #include "esp_secure_cert_read.h"    
-#endif
-
-/**
- * These configuration settings are required to run the mutual auth demo.
- * Throw compilation error if the below configs are not defined.
- */
-
-#ifndef ROOT_CA_PEM
-    #if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
-    static const char root_cert_auth_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
-    #else
-    extern const char root_cert_auth_pem_start[]   asm("_binary_root_cert_auth_pem_start");
-    #endif
-    extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
 #endif
 
 #ifndef CLIENT_IDENTIFIER
@@ -99,34 +85,38 @@
 
 /* The AWS IoT message broker requires either a set of client certificate/private key
  * or username/password to authenticate the client. */
-#ifndef CLIENT_USERNAME
-
-/*
- *!!! Please note democonfigCLIENT_PRIVATE_KEY_PEM in used for
- *!!! convenience of demonstration only.  Production devices should
- *!!! store keys securely, such as within a secure element.
- */
-
-    #ifndef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-        extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
-        extern const char client_cert_pem_end[] asm("_binary_client_crt_end");
-        extern const char client_key_pem_start[] asm("_binary_client_key_start");
-        extern const char client_key_pem_end[] asm("_binary_client_key_end");
-    #endif
-#else
-
+#ifdef CLIENT_USERNAME
 /* If a username is defined, a client password also would need to be defined for
  * client authentication. */
     #ifndef CLIENT_PASSWORD
         #error "Please define client password(CLIENT_PASSWORD) in demo_config.h for client authentication based on username/password."
     #endif
-
 /* AWS IoT MQTT broker port needs to be 443 for client authentication based on
  * username/password. */
     #if AWS_MQTT_PORT != 443
         #error "Broker port, AWS_MQTT_PORT, should be defined as 443 in demo_config.h for client authentication based on username/password."
     #endif
-#endif /* ifndef CLIENT_USERNAME */
+#else /* !CLIENT_USERNAME */
+/*
+ *!!! Please note democonfigCLIENT_PRIVATE_KEY_PEM in used for
+ *!!! convenience of demonstration only.  Production devices should
+ *!!! store keys securely, such as within a secure element.
+ */
+    #ifndef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
+        extern const char client_cert_start[] asm("_binary_client_crt_start");
+        extern const char client_cert_end[] asm("_binary_client_crt_end");
+        extern const char client_key_start[] asm("_binary_client_key_start");
+        extern const char client_key_end[] asm("_binary_client_key_end");
+    #endif /* CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR */
+#endif /* CLIENT_USERNAME */
+
+extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
+extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
+
+/**
+ * These configuration settings are required to run the mutual auth demo.
+ * Throw compilation error if the below configs are not defined.
+ */
 
 /**
  * @brief Length of MQTT server host name.
@@ -606,12 +596,31 @@ static int waitForPacketAck( MQTTContext_t * pMqttContext,
 static MQTTStatus_t processLoopWithTimeout( MQTTContext_t * pMqttContext,
                                             uint32_t ulTimeoutMs );
 
-
 /*-----------------------------------------------------------*/
 
 static uint32_t generateRandomNumber()
 {
     return( rand() );
+}
+
+/*-----------------------------------------------------------*/
+
+static void cleanupESPSecureMgrCerts( NetworkContext_t * pNetworkContext )
+{
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    /* Nothing to be freed */
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    esp_secure_cert_free_device_cert(&pNetworkContext->pcClientCert);
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
+    esp_secure_cert_free_ds_ctx(pNetworkContext->ds_data);
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    esp_secure_cert_free_priv_key(&pNetworkContext->pcClientKey);
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
+    /* Nothing to be freed */
+#endif
+    return;
 }
 
 /*-----------------------------------------------------------*/
@@ -636,33 +645,38 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     uint16_t nextRetryBackOff;
 
     /* Initialize credentials for establishing TLS session. */
-    pNetworkContext->pcServerRootCAPem = root_cert_auth_pem_start;
+    pNetworkContext->pcServerRootCA = root_cert_auth_start;
+    pNetworkContext->pcServerRootCASize = root_cert_auth_end - root_cert_auth_start;
 
     /* If #CLIENT_USERNAME is defined, username/password is used for authenticating
      * the client. */
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    pNetworkContext->pcClientCertPem = NULL;
-    pNetworkContext->pcClientKeyPem = NULL;
     pNetworkContext->use_secure_element = true;
-#elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    esp_err_t esp_ret = ESP_FAIL;
-    char *pcClientCertPem_addr = NULL;
-    uint32_t pcClientCertPem_len = 0;
-    esp_ret = esp_secure_cert_get_device_cert(&pcClientCertPem_addr, &pcClientCertPem_len);
-    if (esp_ret != ESP_OK) {
+
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    if (esp_secure_cert_get_device_cert(&pNetworkContext->pcClientCert, &pNetworkContext->pcClientCertSize) != ESP_OK) {
         LogError( ( "Failed to obtain flash address of device cert") );
+        return EXIT_FAILURE;
     }
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
     pNetworkContext->ds_data = esp_secure_cert_get_ds_ctx();
-    if (pNetworkContext->ds_data != NULL) {
-            pNetworkContext->pcClientCertPem = pcClientCertPem_addr;
-            pNetworkContext->pcClientKeyPem = NULL;
-    } else {
+    if (pNetworkContext->ds_data == NULL) {
         LogError( ( "Failed to obtain the ds context") );
+        return EXIT_FAILURE;
     }
-#else
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    if (esp_secure_cert_get_priv_key(&pNetworkContext->pcClientKey, &pNetworkContext->pcClientKeySize) != ESP_OK) {
+        LogError( ( "Failed to obtain flash address of private_key") );
+        return EXIT_FAILURE;
+    }
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
     #ifndef CLIENT_USERNAME
-        pNetworkContext->pcClientCertPem = client_cert_pem_start;
-        pNetworkContext->pcClientKeyPem = client_key_pem_start;
+        pNetworkContext->pcClientCert = client_cert_start;
+        pNetworkContext->pcClientCertSize = client_cert_end - client_cert_start;
+        pNetworkContext->pcClientKey = client_key_start;
+        pNetworkContext->pcClientKeySize = client_key_end - client_key_start;
     #endif
 #endif
     /* AWS IoT requires devices to send the Server Name Indication (SNI)
@@ -731,6 +745,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
             if( returnStatus == EXIT_FAILURE )
             {
                 /* End TLS session, then close TCP connection. */
+                cleanupESPSecureMgrCerts( pNetworkContext );
                 ( void ) xTlsDisconnect( pNetworkContext );
             }
         }
@@ -1381,7 +1396,7 @@ static int initializeMqtt( MQTTContext_t * pMqttContext,
     int returnStatus = EXIT_SUCCESS;
     MQTTStatus_t mqttStatus;
     MQTTFixedBuffer_t networkBuffer;
-    TransportInterface_t transport;
+    TransportInterface_t transport = { 0 };
 
     assert( pMqttContext != NULL );
     assert( pNetworkContext != NULL );
@@ -1721,6 +1736,7 @@ int aws_iot_demo_main( int argc,
                 returnStatus = subscribePublishLoop( &mqttContext );
 
                 /* End TLS session, then close TCP connection. */
+                cleanupESPSecureMgrCerts( &xNetworkContext );
                 ( void ) xTlsDisconnect( &xNetworkContext );
             }
 

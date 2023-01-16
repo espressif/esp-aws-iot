@@ -11,22 +11,16 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
     TlsTransportStatus_t xRet = TLS_TRANSPORT_SUCCESS;
 
     esp_tls_cfg_t xEspTlsConfig = {
-        .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCAPem ),
-        .cacert_bytes = strlen( pxNetworkContext->pcServerRootCAPem ) + 1,
-        .clientcert_buf = (const unsigned char*) ( pxNetworkContext->pcClientCertPem ),
-        .clientcert_bytes = strlen( pxNetworkContext->pcClientCertPem ) + 1,
+        .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCA ),
+        .cacert_bytes = pxNetworkContext->pcServerRootCASize,
+        .clientcert_buf = (const unsigned char*) ( pxNetworkContext->pcClientCert ),
+        .clientcert_bytes = pxNetworkContext->pcClientCertSize,
         .skip_common_name = pxNetworkContext->disableSni,
         .alpn_protos = pxNetworkContext->pAlpnProtos,
-#if CONFIG_CORE_HTTP_USE_SECURE_ELEMENT
-        .use_secure_element = true,
-#elif CONFIG_CORE_HTTP_USE_DS_PERIPHERAL
+        .use_secure_element = pxNetworkContext->use_secure_element,
         .ds_data = pxNetworkContext->ds_data,
-#else
-        .use_secure_element = false,
-        .ds_data = NULL,
-        .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKeyPem ),
-        .clientkey_bytes = strlen( pxNetworkContext->pcClientKeyPem ) + 1,
-#endif
+        .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKey ),
+        .clientkey_bytes = pxNetworkContext->pcClientKeySize,
         .timeout_ms = 1000,
     };
 

@@ -46,26 +46,18 @@ menu "Example Configuration"
 
         config EXAMPLE_USE_SECURE_ELEMENT
         bool "Use secure element (ATECC608A)"
-        depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
-        # To confirm that we are satisfying the dependencies of secure element
+        depends on (IDF_TARGET_ESP32 || IDF_TARGET_ESP32C2) && ESP_TLS_USING_MBEDTLS
         select ESP_TLS_USE_SECURE_ELEMENT
-        select CORE_HTTP_USE_SECURE_ELEMENT
-        select CORE_MQTT_USE_SECURE_ELEMENT
         help
             Enable the use of secure element for the example.
             The esp-cryptoauthlib component is required for enabling
             this option.
 
-        config EXAMPLE_USE_DS_PERIPHERAL
-        bool "Use DS peripheral"
-        depends on ESP_TLS_USING_MBEDTLS && !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32C2
-        # To confirm that we are satisfying the dependencies of ds peripheral
-        select ESP_TLS_USE_DS_PERIPHERAL
-        select CORE_HTTP_USE_DS_PERIPHERAL
-        select CORE_MQTT_USE_DS_PERIPHERAL
+        config EXAMPLE_USE_ESP_SECURE_CERT_MGR
+        bool "Use ESP Secure Certificate Manager"
         help
-            Enable the use of DS peripheral for the example.
-            The DS peripheral on the device must be provisioned first to use this option.
+            Enable the use of ESP Secure Certificate Manager APIs for the example.
+            Please refer to ESP Secure Certificate Manager documentation for more details.
 
         config EXAMPLE_USE_PLAIN_FLASH_STORAGE
         bool "Use flash storage (default)"

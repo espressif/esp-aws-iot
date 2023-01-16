@@ -29,9 +29,12 @@ struct NetworkContext
     esp_tls_t* pxTls;
     const char *pcHostname;          /**< @brief Server host name. */
     int xPort;                       /**< @brief Server port in host-order. */
-    const char *pcServerRootCAPem;   /**< @brief String representing a trusted server root certificate. */
-    const char *pcClientCertPem;     /**< @brief String representing the client certificate. */
-    const char *pcClientKeyPem;      /**< @brief String representing the client certificate's private key. */
+    const char *pcServerRootCA;      /**< @brief Trusted server root certificate bytes. */
+    uint32_t pcServerRootCASize;     /**< @brief Number of trusted server root certificate bytes. */
+    const char *pcClientCert;        /**< @brief Client certificate bytes. */
+    uint32_t pcClientCertSize;       /**< @brief Number of client certificate bytes. */
+    const char *pcClientKey;         /**< @brief Client certificate's private key bytes. */
+    uint32_t pcClientKeySize;        /**< @brief Number of client certificate's private key bytes. */
     bool use_secure_element;         /**< @brief Boolean representing the use of secure element
                                                  for the TLS connection. */
     void *ds_data;                   /**< @brief Pointer for digital signature peripheral context */

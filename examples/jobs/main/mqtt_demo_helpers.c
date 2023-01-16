@@ -53,7 +53,7 @@
 /* MQTT helper includes */
 #include "mqtt_demo_helpers.h"
 
-#ifdef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
+#ifdef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
     #include "esp_secure_cert_read.h"    
 #endif
 
@@ -62,15 +62,14 @@
  * Throw compilation error if the below configs are not defined.
  */
 
-#ifndef ROOT_CA_CERT_PATH
-    extern const char root_cert_auth_pem_start[] asm("_binary_root_cert_auth_pem_start");
-    extern const char root_cert_auth_pem_end[]   asm("_binary_root_cert_auth_pem_end");
-#endif
-#ifndef CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    extern const char client_cert_pem_start[] asm("_binary_client_crt_start");
-    extern const char client_cert_pem_end[]   asm("_binary_client_crt_end");
-    extern const char client_key_pem_start[] asm("_binary_client_key_start");
-    extern const char client_key_pem_end[]   asm("_binary_client_key_end");
+extern const char root_cert_auth_start[] asm("_binary_root_cert_auth_crt_start");
+extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
+
+#ifndef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
+    extern const char client_cert_start[] asm("_binary_client_crt_start");
+    extern const char client_cert_end[]   asm("_binary_client_crt_end");
+    extern const char client_key_start[] asm("_binary_client_key_start");
+    extern const char client_key_end[]   asm("_binary_client_key_end");
 #endif
 
 /**
@@ -371,31 +370,36 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
     struct timespec tp;
 
     /* Initialize credentials for establishing TLS session. */
-    pNetworkContext->pcServerRootCAPem = root_cert_auth_pem_start;
+    pNetworkContext->pcServerRootCA = root_cert_auth_start;
+    pNetworkContext->pcServerRootCASize = root_cert_auth_end - root_cert_auth_start;
 
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    pNetworkContext->pcClientCertPem = NULL;
-    pNetworkContext->pcClientKeyPem = NULL;
     pNetworkContext->use_secure_element = true;
-#elif CONFIG_EXAMPLE_USE_DS_PERIPHERAL
-    esp_err_t esp_ret = ESP_FAIL;
-    char *pcClientCertPem_addr = NULL;
-    uint32_t pcClientCertPem_len = 0;
-    esp_ret = esp_secure_cert_get_device_cert(&pcClientCertPem_addr, &pcClientCertPem_len);
-    if (esp_ret != ESP_OK) {
+
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    if (esp_secure_cert_get_device_cert(&pNetworkContext->pcClientCert, &pNetworkContext->pcClientCertSize) != ESP_OK) {
         LogError( ( "Failed to obtain flash address of device cert") );
+        return EXIT_FAILURE;
     }
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
     pNetworkContext->ds_data = esp_secure_cert_get_ds_ctx();
-    if (pNetworkContext->ds_data != NULL) {
-            pNetworkContext->pcClientCertPem = pcClientCertPem_addr;
-            pNetworkContext->pcClientKeyPem = NULL;
-    } else {
+    if (pNetworkContext->ds_data == NULL) {
         LogError( ( "Failed to obtain the ds context") );
+        return EXIT_FAILURE;
     }
-#else
-    pNetworkContext->pcClientCertPem = client_cert_pem_start;
-    pNetworkContext->pcClientKeyPem = client_key_pem_start;
-#endif
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    if (esp_secure_cert_get_priv_key(&pNetworkContext->pcClientKey, &pNetworkContext->pcClientKeySize) != ESP_OK) {
+        LogError( ( "Failed to obtain flash address of private_key") );
+        return EXIT_FAILURE;
+    }
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
+    pNetworkContext->pcClientCert = client_cert_start;
+    pNetworkContext->pcClientCertSize = client_cert_end - client_cert_start;
+    pNetworkContext->pcClientKey = client_key_start;
+    pNetworkContext->pcClientKeySize = client_key_end - client_key_start;
+#endif /* CONFIG_EXAMPLE_USE_SECURE_ELEMENT */
+
     if( democonfigMQTT_BROKER_PORT == 443 )
     {
         /* Pass the ALPN protocol name depending on the port being used.
@@ -584,6 +588,26 @@ static int waitForPacketAck( MQTTContext_t * pMqttContext,
 
 /*-----------------------------------------------------------*/
 
+static void cleanupESPSecureMgrCerts( NetworkContext_t * pNetworkContext )
+{
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    /* Nothing to be freed */
+#elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
+    esp_secure_cert_free_device_cert(&pNetworkContext->pcClientCert);
+#ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
+    esp_secure_cert_free_ds_ctx(pNetworkContext->ds_data);
+#else /* !CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+    esp_secure_cert_free_priv_key(&pNetworkContext->pcClientKey);
+#endif /* CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL */
+
+#else /* !CONFIG_EXAMPLE_USE_SECURE_ELEMENT && !CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR  */
+    /* Nothing to be freed */
+#endif
+    return;
+}
+
+/*-----------------------------------------------------------*/
+
 MQTTStatus_t processLoopWithTimeout( uint32_t ulTimeoutMs )
 {
     uint32_t ulMqttProcessLoopTimeoutTime;
@@ -706,7 +730,7 @@ int32_t EstablishMqttSession( MQTTEventCallback_t eventCallback )
     MQTTStatus_t mqttStatus;
     MQTTConnectInfo_t connectInfo;
     MQTTFixedBuffer_t networkBuffer;
-    TransportInterface_t transport;
+    TransportInterface_t transport = { 0 };
     bool createCleanSession = false;
     MQTTContext_t * pMqttContext = &mqttContext;
     NetworkContext_t * pNetworkContext = &networkContext;
@@ -879,6 +903,7 @@ int32_t DisconnectMqttSession( void )
     }
 
     /* End TLS session, then close TCP connection. */
+    cleanupESPSecureMgrCerts( pNetworkContext );
     ( void ) xTlsDisconnect( pNetworkContext );
 
     return returnStatus;

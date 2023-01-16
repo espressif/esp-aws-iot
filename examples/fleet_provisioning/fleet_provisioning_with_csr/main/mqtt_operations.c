@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 
 /* POSIX includes. */
 #include <unistd.h>
@@ -717,7 +718,7 @@ static bool waitForPacketAck( MQTTContext_t * pMqttContext,
     if( ( ( eMqttStatus != MQTTSuccess ) && ( eMqttStatus != MQTTNeedMoreBytes ) ) ||
         ( globalAckPacketIdentifier != usPacketIdentifier ) )
     {
-        LogError( ( "MQTT_ProcessLoop failed to receive ACK packet: Expected ACK Packet ID=%02X, LoopDuration=%u, Status=%s",
+        LogError( ( "MQTT_ProcessLoop failed to receive ACK packet: Expected ACK Packet ID=%02X, LoopDuration=%"PRIu32", Status=%s",
                     usPacketIdentifier,
                     ( ulCurrentTime - ulMqttProcessLoopEntryTime ),
                     MQTT_Status_strerror( eMqttStatus ) ) );
