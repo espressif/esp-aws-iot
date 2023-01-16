@@ -44,10 +44,8 @@
     #include "esp_secure_cert_read.h"    
 #endif
 
-#ifndef ROOT_CA_PEM
-    extern const char root_cert_auth_start[] asm("_binary_root_cert_auth_crt_start");
-    extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
-#endif
+extern const char root_cert_auth_start[] asm("_binary_root_cert_auth_crt_start");
+extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 
 /* Check that a path for the client certificate is defined. */
 #ifndef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR

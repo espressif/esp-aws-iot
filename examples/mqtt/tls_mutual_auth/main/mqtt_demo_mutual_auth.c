@@ -110,14 +110,8 @@
     #endif /* CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR */
 #endif /* CLIENT_USERNAME */
 
-#ifndef ROOT_CA_PEM
-    #if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
-    static const char root_cert_auth_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
-    #else
-    extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
-    #endif
-    extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
-#endif
+extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
+extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
 
 /**
  * These configuration settings are required to run the mutual auth demo.

@@ -77,14 +77,12 @@
     #include "esp_secure_cert_read.h"    
 #endif
 
-#ifndef ROOT_CA_CERT_PATH
-    extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
-    extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
-#endif
-#ifndef ROOT_CA_CERT_PATH_HTTP
-    extern const char http_root_cert_auth_start[]   asm("_binary_http_root_cert_auth_crt_start");
-    extern const char http_root_cert_auth_end[]   asm("_binary_http_root_cert_auth_crt_end");
-#endif
+extern const char root_cert_auth_start[]   asm("_binary_root_cert_auth_crt_start");
+extern const char root_cert_auth_end[]   asm("_binary_root_cert_auth_crt_end");
+
+extern const char http_root_cert_auth_start[]   asm("_binary_http_root_cert_auth_crt_start");
+extern const char http_root_cert_auth_end[]   asm("_binary_http_root_cert_auth_crt_end");
+
 #ifndef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
     extern const char client_cert_start[] asm("_binary_client_crt_start");
     extern const char client_cert_end[] asm("_binary_client_crt_end");
