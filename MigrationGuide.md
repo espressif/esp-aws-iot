@@ -1,6 +1,6 @@
 # Migration Guide for esp-aws-iot Releases
 
-## esp-aws-iot Release 202012.04-LTS (23rd August 2022) to esp-aws-iot Release 202210.01-LTS (14th January 2023)
+## esp-aws-iot Release 202012.04-LTS to esp-aws-iot Release 202210.01-LTS
 
 1. Change in `NetworkContext` struct
 
