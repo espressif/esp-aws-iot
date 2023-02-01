@@ -35,7 +35,6 @@
 #endif
 
 #include "esp_log.h"
-#include "esp_vfs.h"
 
 static const char *TAG = "aws_iot";
 
