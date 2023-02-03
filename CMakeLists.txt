@@ -24,3 +24,5 @@ set(COMPONENT_SRCS "${aws_sdk_dir}/aws_iot_jobs_interface.c"
 set(COMPONENT_REQUIRES "mbedtls")
 
 register_component()
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-format)
+
