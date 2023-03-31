@@ -750,7 +750,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
             }
         }
 
-        if( returnStatus == EXIT_FAILURE )
+        if( returnStatus == EXIT_FAILURE || tlsStatus == TLS_TRANSPORT_CONNECT_FAILURE )
         {
             /* Generate a random number and get back-off value (in milliseconds) for the next connection retry. */
             backoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &reconnectParams, generateRandomNumber(), &nextRetryBackOff );
