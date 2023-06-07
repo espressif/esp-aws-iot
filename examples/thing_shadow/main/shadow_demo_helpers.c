@@ -228,7 +228,7 @@ static uint8_t buffer[ NETWORK_BUFFER_SIZE ];
 /**
  * @brief The MQTT context used for MQTT operation.
  */
-static MQTTContext_t mqttContext = { 0 };
+ MQTTContext_t mqttContext = { 0 };
 
 /**
  * @brief The network context used for Openssl operation.
@@ -310,7 +310,7 @@ static void cleanupOutgoingPublishAt( uint8_t index );
  * @brief Function to clean up all the outgoing publishes maintained in the
  * array.
  */
-static void cleanupOutgoingPublishes( void );
+ void cleanupOutgoingPublishes( void );
 
 /**
  * @brief Function to clean up the publish packet with the given packet id.
@@ -525,7 +525,7 @@ static void cleanupOutgoingPublishAt( uint8_t index )
 
 /*-----------------------------------------------------------*/
 
-static void cleanupOutgoingPublishes( void )
+ void cleanupOutgoingPublishes( void )
 {
     assert( outgoingPublishPackets != NULL );
 
@@ -946,7 +946,7 @@ int32_t SubscribeToTopic( const char * pTopicFilter,
     ( void ) memset( ( void * ) pSubscriptionList, 0x00, sizeof( pSubscriptionList ) );
 
     /* This example subscribes to only one topic and uses QOS1. */
-    pSubscriptionList[ 0 ].qos = MQTTQoS1;
+    pSubscriptionList[ 0 ].qos = MQTTQoS0;
     pSubscriptionList[ 0 ].pTopicFilter = pTopicFilter;
     pSubscriptionList[ 0 ].topicFilterLength = topicFilterLength;
 
@@ -1074,7 +1074,7 @@ int32_t PublishToTopic( const char * pTopicFilter,
     {
         LogInfo( ( "Published payload: %s", pPayload ) );
         /* This example publishes to only one topic and uses QOS1. */
-        outgoingPublishPackets[ publishIndex ].pubInfo.qos = MQTTQoS1;
+        outgoingPublishPackets[ publishIndex ].pubInfo.qos = MQTTQoS0;
         outgoingPublishPackets[ publishIndex ].pubInfo.pTopicName = pTopicFilter;
         outgoingPublishPackets[ publishIndex ].pubInfo.topicNameLength = topicFilterLength;
         outgoingPublishPackets[ publishIndex ].pubInfo.pPayload = pPayload;
