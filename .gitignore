@@ -3,11 +3,14 @@
 # Example project files
 examples/**/sdkconfig
 examples/**/sdkconfig*
+examples/**/sdkconfig.defaults
+examples/**/provis.sh
 examples/**/sdkconfig.old
 examples/**/build
 examples/**/managed_components
+examples/**/main/certs
 examples/**/tmp
-examples/**/.vscode
+examples/**/main/.vscode
 examples/**/**/certs*
 **/examples/.DS_Store
 **/.DS_Store
