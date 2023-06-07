@@ -10,7 +10,7 @@ examples/**/build
 examples/**/managed_components
 examples/**/main/certs
 examples/**/tmp
-examples/**/main/.vscode
+examples/**/.vscode
 examples/**/**/certs*
 **/examples/.DS_Store
 **/.DS_Store
