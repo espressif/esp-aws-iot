@@ -22,7 +22,7 @@
 #include "wifi_driver/data_store_nvs.h"
 #include "wifi_driver/http_server.h"
 #include "wifi_driver/wifi_manager.h"
-
+#include "buzzer.h"
 // #include "parse/Cjsonoperation.h"
 
 
@@ -114,6 +114,7 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
                                 ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
                                 ESP_ERROR_CHECK(esp_wifi_start());
                                 esp_wifi_set_max_tx_power(34);
+
                         }
                 }
 

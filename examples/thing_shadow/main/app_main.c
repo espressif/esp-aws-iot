@@ -66,16 +66,16 @@ static void WatchdogInit()
  */
 void core_start(void)
 {
-    ldo_init();
-    buzzer_play_progress();
     Sleep(5);
+    ldo_init();
+    buzzer_play_james_bond();
+
+    // setting watchdog timer for 2 seconds
+    WatchdogInit(); // Initializing Watchdog timer
+
     WifiInit(); // WiFi Initialization
 
     read_nvs_config(NULL);
-
-    // setting watchdog timer for 2 seconds
-
-    WatchdogInit(); // Initializing Watchdog timer
 
     GetStandardTime(); // Get Standard time
 
@@ -91,7 +91,6 @@ void app_main()
 {
     //** start the core functionality
     core_start();
-    buzzer_play_progress();
     //** classsic shadow
     aws_shadow_main(0, NULL);
 }

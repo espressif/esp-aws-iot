@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "buzzer.h"
 
 /* Shadow includes */
 #include "shadow_demo_helpers.h"
@@ -460,11 +461,12 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
                    AWS_IOT_ENDPOINT,
                    AWS_MQTT_PORT ) );
         tlsStatus = xTlsConnect ( pNetworkContext );
-
         if( tlsStatus != TLS_TRANSPORT_SUCCESS )
         {
             /* Generate a random number and get back-off value (in milliseconds) for the next connection retry. */
             backoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &reconnectParams, generateRandomNumber(), &nextRetryBackOff );
+            
+            buzzer_play_error_tune();
 
             if( backoffAlgStatus == BackoffAlgorithmRetriesExhausted )
             {

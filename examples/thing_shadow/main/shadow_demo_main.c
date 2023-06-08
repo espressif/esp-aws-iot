@@ -579,7 +579,6 @@ void extractValues(const char* input, char* phValue, char* conductivityValue, si
 
 
     
-        // buzzer_play_tone();
         cJSON *root, *reported, *report;
         root = cJSON_CreateObject();
         cJSON_AddItemToObject(root, "state",  reported = cJSON_CreateObject());
@@ -612,6 +611,7 @@ void extractValues(const char* input, char* phValue, char* conductivityValue, si
         {
             if (wifi_sta && disconnect_occur)
             {
+                buzzer_play_error_tune();
                 disconnect_occur = false;
                 Sleep(2);
                 clean_mqtt(NULL);
@@ -629,7 +629,7 @@ void extractValues(const char* input, char* phValue, char* conductivityValue, si
                     {
                         buzzer_play_heartbeat();
                         feed_watchdog = true;
-                        Sleep(5);
+                        Sleep(10);
                         // esp_sleep_enable_timer_wakeup(device_config.publish_interval*1000*1000);
                         // esp_deep_sleep_start();
                     }
@@ -640,13 +640,14 @@ void extractValues(const char* input, char* phValue, char* conductivityValue, si
                 }
                 else
                 {
-
+                    buzzer_play_error_tune();
                     clean_mqtt(NULL);
                     init_classic_shadow();
                 }
             }
             else
             {
+                buzzer_play_error_tune();
                 disconnect_occur = true;
             }
             Sleep(5);
