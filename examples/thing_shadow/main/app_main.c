@@ -68,8 +68,8 @@ void core_start(void)
 {
     Sleep(5);
     ldo_init();
+    ldo_on();
     buzzer_play_james_bond();
-
     // setting watchdog timer for 2 seconds
     WatchdogInit(); // Initializing Watchdog timer
 
@@ -78,8 +78,9 @@ void core_start(void)
     read_nvs_config(NULL);
 
     GetStandardTime(); // Get Standard time
+    uart_initialize();
 
-    uart_init();
+
 }
 
 /*

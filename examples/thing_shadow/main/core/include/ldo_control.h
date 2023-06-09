@@ -6,5 +6,7 @@
 #define LDO_CONTROL_GPIO GPIO_NUM_10
 
 void ldo_init();
+void ldo_on();
+void ldo_off();
 
 #endif /* LDO_CONTROL_H */

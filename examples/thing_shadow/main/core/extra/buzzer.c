@@ -3,7 +3,6 @@
 #include "driver/ledc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include <stdlib.h>  // For generating random numbers
 
 #define BUZZER_GPIO GPIO_NUM_0
 #define BUZZER_CHANNEL LEDC_CHANNEL_0
@@ -50,6 +49,7 @@ void buzzer_play_tone()
 
 void buzzer_play_heartbeat()
 {
+    
     // Play the tone resembling a single heartbeat
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = BUZZER_RESOLUTION,
@@ -82,6 +82,7 @@ void buzzer_play_heartbeat()
 
 void buzzer_play_james_bond()
 {
+    
     // Define the duty cycle values for the James Bond theme
     uint8_t duty_cycles[] = {128, 200, 128, 0, 128, 200, 128, 0, 128, 128, 128, 0, 128, 64, 0, 192};
 
@@ -116,6 +117,7 @@ void buzzer_play_james_bond()
 }
 void buzzer_play_error_tune()
 {
+    
     // Define the duty cycle values for the error tune
     uint8_t duty_cycles[] = {200, 0, 128, 0, 200, 0, 128, 0, 200, 0};
 
@@ -151,6 +153,7 @@ void buzzer_play_error_tune()
 
 void buzzer_play_mario_tune()
 {
+    
     // Define the duty cycle values for the Mario tune
     uint8_t duty_cycles[] = {150, 0, 150, 0, 150, 0, 100, 0, 150, 0, 100, 0, 150, 0, 0, 0};
 
@@ -186,6 +189,7 @@ void buzzer_play_mario_tune()
 
 void buzzer_play_happy_tune()
 {
+    
     // Define the duty cycle values for the happy tune
     uint8_t duty_cycles[] = {128, 150, 170, 192, 170, 150, 128, 128};
 
