@@ -538,8 +538,6 @@
      * loops to process incoming messages. Those are not the focus of this demo
      * and therefore, are placed in a separate file shadow_demo_helpers.c.
      */
-
-
 void extractValues(const char* input, char* phValue, char* conductivityValue, size_t bufferSize)
 {
     char* token;
@@ -613,6 +611,7 @@ void createPayload(char** test_payload) {
         while (1)
         {
             ldo_on();
+            vTaskDelay(10 / portTICK_PERIOD_MS);
             createPayload(&test_payload); //* get data and prepare payload
 
             if (wifi_sta && disconnect_occur)
@@ -637,7 +636,7 @@ void createPayload(char** test_payload) {
                         feed_watchdog = true;
                         //Sleep(device_config.publish_interval*1000*1000);
                         ldo_off();
-                        Sleep(30);
+                        Sleep(45);
                         // esp_sleep_enable_timer_wakeup(device_config.publish_interval*1000*1000);
                         // esp_deep_sleep_start();
                     }

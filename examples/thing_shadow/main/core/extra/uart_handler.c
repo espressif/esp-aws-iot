@@ -60,7 +60,7 @@ void get_uart_data(char* buffer, size_t buffer_size)
     for (int ctr = 0; ctr < 5; ctr++) {
         uart_flush(UART_PORT);
         uart_write_bytes(UART_PORT, test_str, strlen(test_str));
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(50));
         int len = uart_read_bytes(UART_PORT, data, BUF_SIZE, PACKET_READ_TICS);
         snprintf(buffer, buffer_size, "%.*s", len, (char*)data);
         printf("raw received data: '%.*s'\n", len, (char*)data);
