@@ -10,7 +10,7 @@ extern bool wifi_sta;
 typedef struct {
         char version[32];
         uint16_t publish_interval;
-        char customer_id[32];
+        char facility_id[32];
         uint8_t led;
         uint8_t dbg_mode;
         uint8_t reset;

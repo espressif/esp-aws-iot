@@ -51,9 +51,11 @@ void uart_initialize()
 
     uart_set_mode(uart_num, UART_MODE_RS485_HALF_DUPLEX);
 }
+
 void get_uart_data(char* buffer, size_t buffer_size)
 {
     uint8_t* data = (uint8_t*)malloc(BUF_SIZE);
+    int len = 0;
 
     const char* test_str = "3101valuer\n\r";
 
@@ -61,12 +63,19 @@ void get_uart_data(char* buffer, size_t buffer_size)
         uart_flush(UART_PORT);
         uart_write_bytes(UART_PORT, test_str, strlen(test_str));
         vTaskDelay(pdMS_TO_TICKS(50));
-        int len = uart_read_bytes(UART_PORT, data, BUF_SIZE, PACKET_READ_TICS);
-        snprintf(buffer, buffer_size, "%.*s", len, (char*)data);
-        printf("raw received data: '%.*s'\n", len, (char*)data);
-        // vTaskDelay(pdMS_TO_TICKS(500));
-        break;
+        len = uart_read_bytes(UART_PORT, data, BUF_SIZE, PACKET_READ_TICS);
+        ESP_LOGI(TAG, "data length: %d", len);
+
+        if (len >= 15) {
+            ESP_LOGI(TAG, "Received data: %s \nData looks valid. Exiting the loop...", (char*)data);
+            break;
+        } else {
+            ESP_LOGI(TAG, "Invalid data: %s \nTrying again ...", (char*)data);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 
+    snprintf(buffer, buffer_size, "%.*s", len, (char*)data);
     free(data);
 }

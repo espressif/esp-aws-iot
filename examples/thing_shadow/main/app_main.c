@@ -69,7 +69,7 @@ void core_start(void)
     Sleep(5);
     ldo_init();
     ldo_on();
-    buzzer_play_james_bond();
+    // buzzer_play_james_bond();
     // setting watchdog timer for 2 seconds
     WatchdogInit(); // Initializing Watchdog timer
 

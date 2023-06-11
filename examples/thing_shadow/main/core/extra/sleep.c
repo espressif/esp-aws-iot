@@ -25,7 +25,7 @@
  */
 void write_nvs_config() {
         nvs_perform_str("version", device_config.version, STR, WRITE);
-        nvs_perform_str("customerid", device_config.customer_id, STR, WRITE);
+        nvs_perform_str("facility_id", device_config.facility_id, STR, WRITE);
         nvs_perform_number("pub_inter", &device_config.publish_interval, U16, WRITE);
         nvs_perform_number("led", &device_config.led, U8, WRITE);
         nvs_perform_number("dgb_mode", &device_config.dbg_mode, U8, WRITE);
@@ -37,7 +37,7 @@ void write_nvs_config() {
 void read_nvs_config() {
     
         nvs_perform_str("version", device_config.version, STR, READ);
-        nvs_perform_str("customerid", device_config.customer_id, STR, READ);
+        nvs_perform_str("facility_id", device_config.facility_id, STR, READ);
         nvs_perform_number("pub_inter", &device_config.publish_interval, U16, READ);
         nvs_perform_number("led", &device_config.led, U8, READ);
         nvs_perform_number("dgb_mode", &device_config.dbg_mode, U8, READ);
@@ -51,8 +51,8 @@ void read_nvs_config() {
         if (strlen(device_config.version) == 0)
                 sprintf(device_config.version, "%s", "v1.0.0");
 
-        if (strlen(device_config.customer_id) == 0) {
-                sprintf(device_config.customer_id, "%s", "testing");
+        if (strlen(device_config.facility_id) == 0) {
+                sprintf(device_config.facility_id, "%s", "testing");
                 write_nvs_config();
         }
 }
