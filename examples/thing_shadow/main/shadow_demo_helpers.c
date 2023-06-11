@@ -472,6 +472,7 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
             {
                 LogError( ( "Connection to the broker failed, all attempts exhausted." ) );
                 returnStatus = EXIT_FAILURE;
+                esp_restart();
             }
             else if( backoffAlgStatus == BackoffAlgorithmSuccess )
             {

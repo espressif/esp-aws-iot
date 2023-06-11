@@ -601,7 +601,7 @@ void createPayload(char** test_payload) {
     //cJSON_AddItemToObject(report, "data_packet_nr", cJSON_CreateNumber(5));
     cJSON_AddItemToObject(report, "ph", cJSON_CreateString(phValue));
     cJSON_AddItemToObject(report, "conductivity", cJSON_CreateString(conductivityValue));
-    cJSON_AddItemToObject(report, "cpu_temp", cJSON_CreateNumber(cpu_temp));
+    cJSON_AddItemToObject(report, "cpu_temp", cJSON_CreateString(cpu_temp));
     cJSON_AddItemToObject(report, "rawdat", cJSON_CreateString(uart_data));
     cJSON_AddItemToObject(report, "rssi", cJSON_CreateNumber(rssi_value));
     cJSON_AddItemToObject(report, "reset_reasons", cJSON_CreateNumber(esp_reset_reason()));
