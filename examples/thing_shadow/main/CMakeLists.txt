@@ -13,6 +13,7 @@ set(COMPONENT_SRCS
 	 "core/extra/buzzer.c"
 	 "core/extra/uart_handler.c"
 	 "core/extra/ldo_control.c"
+	 "core/extra/sensors.c"
 	)
 
 set(COMPONENT_ADD_INCLUDEDIRS
