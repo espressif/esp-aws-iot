@@ -606,7 +606,7 @@ void createPayload(char** test_payload) {
 
     // Modify the input string by removing non-alphanumeric characters and # and \ and /
     stringRemoveNonAlphaNum(uart_data);
-    ESP_LOGI(TAG, "Filtered UART data %s: \n", uart_data);
+    // ESP_LOGI(TAG, "Filtered UART data %s: \n", uart_data);
 
     strcpy(tmprawdata, uart_data); // Copy data to rxdata
     extractValues(tmprawdata, phValue, conductivityValue, sizeof(phValue));
