@@ -79,6 +79,7 @@
     #include <iconv.h>
     #include "ldo_control.h"
     #include "esp_wifi.h"
+    #include "sensors.h"
 
     /**
      * @brief Format string representing a Shadow document with a "desired" state.
@@ -571,6 +572,7 @@ void extractValues(const char* input, char* phValue, char* conductivityValue, si
             conductivityValue[bufferSize - 1] = '\0';
         }
     }
+    ESP_LOGI(TAG, "pH value: %d \n, Cond. vaue: %d \n, Done!", phValue, conductivityValue);
 }
 
 void createPayload(char** test_payload) {

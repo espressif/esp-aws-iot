@@ -19,7 +19,7 @@
 #include "ldo_control.h"
 #include "buzzer.h"
 #include "uart_handler.h"
-
+#include "sensors.h"
 
 int aws_shadow_main(int argc, char **argv);
 
