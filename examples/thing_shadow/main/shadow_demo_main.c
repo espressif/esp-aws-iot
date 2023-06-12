@@ -647,6 +647,7 @@ void createPayload(char** test_payload) {
             ldo_on();
             vTaskDelay(10 / portTICK_PERIOD_MS);
             createPayload(&test_payload); //* get data and prepare payload
+            ESP_LOGI(TAG, "Publish interval: %d: \n", device_config.publish_interval);
 
             if (wifi_sta && disconnect_occur)
             {
@@ -669,7 +670,7 @@ void createPayload(char** test_payload) {
                         buzzer_play_heartbeat();
                         feed_watchdog = true;
                         ldo_off();
-                        Sleep(10);
+                        Sleep(device_config.publish_interval);
                         // Sleep(device_config.publish_interval*1000*1000);
                         // esp_sleep_enable_timer_wakeup(device_config.publish_interval*1000*1000);
                         // esp_deep_sleep_start();
