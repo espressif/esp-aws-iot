@@ -429,7 +429,8 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     if( pucSignerCert == NULL )
     {
         LogError( ( "Cert read failed" ) );
-        return OTA_PAL_COMBINE_ERR( OtaPalBadSignerCert, 0 );
+        result = OTA_PAL_COMBINE_ERR( OtaPalBadSignerCert, 0 );
+        goto end;
     }
     else
     {
@@ -477,7 +478,7 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     }
 
 end:
-
+    vPortFree( pvSigVerifyContext );
     return result;
 }
 
