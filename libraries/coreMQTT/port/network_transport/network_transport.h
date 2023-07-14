@@ -55,6 +55,7 @@ struct NetworkContext
     * @brief Disable server name indication (SNI) for a TLS session.
     */
     BaseType_t disableSni;
+    TickType_t xTimeout;
 };
 
 TlsTransportStatus_t xTlsConnect(NetworkContext_t* pxNetworkContext );

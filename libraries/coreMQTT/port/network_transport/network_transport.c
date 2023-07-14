@@ -1,4 +1,5 @@
 #include "freertos/FreeRTOS.h"
+#include "freertos/projdefs.h"
 #include "freertos/semphr.h"
 #include <string.h>
 #include "esp_log.h"
@@ -8,7 +9,10 @@
 
 TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
 {
-    TlsTransportStatus_t xRet = TLS_TRANSPORT_SUCCESS;
+    TlsTransportStatus_t xResult = TLS_TRANSPORT_CONNECT_FAILURE;
+    TimeOut_t xTimeout;
+
+    TickType_t xTicksToWait = pxNetworkContext->xTimeout;
 
     esp_tls_cfg_t xEspTlsConfig = {
         .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCA ),
@@ -24,96 +28,168 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         .timeout_ms = 1000,
     };
 
-    esp_tls_t* pxTls = esp_tls_init();
+    vTaskSetTimeOutState( &xTimeout );
 
-    xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
-    pxNetworkContext->pxTls = pxTls;
-
-    if (esp_tls_conn_new_sync( pxNetworkContext->pcHostname, 
-            strlen( pxNetworkContext->pcHostname ), 
-            pxNetworkContext->xPort, 
-            &xEspTlsConfig, pxTls) <= 0)
+    if( xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY) == pdTRUE )
     {
-        if (pxNetworkContext->pxTls)
+        int lConnectResult = -1;
+        esp_tls_t * pxTls = esp_tls_init();
+
+        if( pxTls != NULL )
         {
-            esp_tls_conn_destroy(pxNetworkContext->pxTls);
-            pxNetworkContext->pxTls = NULL;
+            pxNetworkContext->pxTls = pxTls;
+
+            do
+            {
+                lConnectResult = esp_tls_conn_new_async( pxNetworkContext->pcHostname,
+                    strlen( pxNetworkContext->pcHostname ),
+                    pxNetworkContext->xPort,
+                    &xEspTlsConfig, pxTls );
+
+                if( lConnectResult != 0 )
+                {
+                    break;
+                }
+
+                vTaskDelay( pdMS_TO_TICKS( 10 ) );
+            }
+            while( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE );
+
+            if( lConnectResult == 1 )
+            {
+                xResult = TLS_TRANSPORT_SUCCESS;
+            }
+            else
+            {
+                esp_tls_conn_destroy( pxNetworkContext->pxTls );
+                pxNetworkContext->pxTls = NULL;
+            }
         }
-        xRet = TLS_TRANSPORT_CONNECT_FAILURE;
+        ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
     }
 
-    xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
-
-    return xRet;
+    return xResult;
 }
 
 TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext )
 {
-    BaseType_t xRet = TLS_TRANSPORT_SUCCESS;
+    BaseType_t xResult = TLS_TRANSPORT_DISCONNECT_FAILURE;
 
-    xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
-    if (pxNetworkContext->pxTls != NULL && 
-        esp_tls_conn_destroy(pxNetworkContext->pxTls) < 0)
+    if( xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY ) == pdTRUE )
     {
-        xRet = TLS_TRANSPORT_DISCONNECT_FAILURE;
-    }
-    pxNetworkContext->pxTls = NULL;
-    xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
+        if( ( pxNetworkContext->pxTls != NULL ) &&
+            ( esp_tls_conn_destroy(pxNetworkContext->pxTls ) != 0 ) )
+        {
+            xResult = TLS_TRANSPORT_DISCONNECT_FAILURE;
+        }
+        else
+        {
+            xResult = TLS_TRANSPORT_SUCCESS;
+            pxNetworkContext->pxTls = NULL;
+        }
 
-    return xRet;
+        ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
+    }
+
+    return xResult;
 }
 
-int32_t espTlsTransportSend(NetworkContext_t* pxNetworkContext,
-    const void* pvData, size_t uxDataLen)
+int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
+                             const void* pvData, size_t uxDataLen)
 {
-    if (pvData == NULL || uxDataLen == 0)
-    {
-        return -1;
-    }
 
-    int32_t lBytesSent = 0;
+    int lSockFd = -1;
+    fd_set write_fds;
+    fd_set errorSet;
 
-    if(pxNetworkContext != NULL && pxNetworkContext->pxTls != NULL)
+    struct timeval timeout = { .tv_usec = 10000, .tv_sec = 0 };
+
+    int32_t lBytesSent = -1;
+
+    if( ( pvData != NULL ) &&
+        ( uxDataLen > 0 ) &&
+        ( pxNetworkContext != NULL ) &&
+        ( pxNetworkContext->pxTls != NULL ) )
     {
-        xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
-        lBytesSent = esp_tls_conn_write(pxNetworkContext->pxTls, pvData, uxDataLen);
-        xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
-    }
-    else
-    {
-        lBytesSent = -1;
+        TimeOut_t xTimeout;
+        TickType_t xTicksToWait = pxNetworkContext->xTimeout;
+
+        vTaskSetTimeOutState( &xTimeout );
+
+        if( xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, xTicksToWait) == pdTRUE )
+        {
+            lBytesSent = 0;
+            do
+            {
+                FD_ZERO(&write_fds);
+                FD_SET(lSockFd, &write_fds);
+
+                FD_ZERO(&errorSet);
+                FD_SET(lSockFd, &errorSet);
+
+                select(lSockFd + 1, NULL, &write_fds, &errorSet, &timeout);
+
+                ssize_t lResult = esp_tls_conn_write(pxNetworkContext->pxTls, pvData, uxDataLen);
+
+                if( lResult > 0 )
+                {
+                    lBytesSent += ( int32_t ) lResult;
+                }
+                else if( ( lResult != MBEDTLS_ERR_SSL_WANT_WRITE ) &&
+                         ( lResult != MBEDTLS_ERR_SSL_WANT_READ ) )
+                {
+                    lBytesSent = lResult;
+                }
+
+                if( ( lBytesSent < 0 ) ||
+                    ( lBytesSent == uxDataLen ) )
+                {
+                    break;
+                }
+
+            }
+            while( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE );
+
+            xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
+        }
     }
 
     return lBytesSent;
 }
 
-int32_t espTlsTransportRecv(NetworkContext_t* pxNetworkContext,
-    void* pvData, size_t uxDataLen)
+int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
+                             void* pvData, size_t uxDataLen)
 {
-    if (pvData == NULL || uxDataLen == 0)
+    int32_t lBytesRead = -1;
+
+    if( ( pvData != NULL ) &&
+        ( uxDataLen > 0 ) &&
+        ( pxNetworkContext != NULL ) &&
+        ( pxNetworkContext->pxTls != NULL ) )
     {
-        return -1;
+        if( xSemaphoreTake( pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY ) == pdTRUE )
+        {
+            lBytesRead = 0;
+
+            ssize_t lResult = esp_tls_conn_read( pxNetworkContext->pxTls, pvData, ( size_t ) uxDataLen );
+
+            if( lResult > 0 )
+            {
+                lBytesRead = ( int32_t ) lResult;
+            }
+            else if( ( lResult != ESP_TLS_ERR_SSL_WANT_READ ) &&
+                    ( lResult != ESP_TLS_ERR_SSL_WANT_WRITE ) )
+            {
+                lBytesRead = -1;
+            }
+            else
+            {
+                /* Empty Else */
+            }
+
+            ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore);
+        }
     }
-    int32_t lBytesRead = 0;
-    if(pxNetworkContext != NULL && pxNetworkContext->pxTls != NULL)
-    {
-        xSemaphoreTake(pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY);
-        lBytesRead = esp_tls_conn_read(pxNetworkContext->pxTls, pvData, uxDataLen);
-        xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
-    }
-    else
-    {
-        return -1; /* pxNetworkContext or pxTls uninitialised */
-    }
-    if (lBytesRead == ESP_TLS_ERR_SSL_WANT_WRITE  || lBytesRead == ESP_TLS_ERR_SSL_WANT_READ) {
-        return 0;
-    }
-    if (lBytesRead < 0) {
-        return lBytesRead;
-    }
-    if (lBytesRead == 0) {
-        /* Connection closed */
-        return -1;
-    }
+
     return lBytesRead;
 }
