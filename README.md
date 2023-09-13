@@ -18,7 +18,7 @@ This SDK enables AWS IoT cloud connectivity with ESP32-based platforms using the
   ```
 - Please refer to https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html for setting up ESP-IDF
   - ESP-IDF can be downloaded from https://github.com/espressif/esp-idf/
-  - This SDK supports `release/v5.0`, `release/v4.4` and `release/v4.3` of ESP-IDF.
+  - This SDK supports `release/v5.1`, `release/v5.0`, `release/v4.4` and `release/v4.3` of ESP-IDF.
   - Please set your branch to the IDF release that you would like to use, and pull in the latest changes.
   > **Note**: Please read [Support Policy](#support-policy) below for more details.
 - Please refer to the [example README](examples/README.md) for more information on setting up examples.
@@ -36,81 +36,131 @@ The following table shows esp-aws-iot support with the ESP-IDF support of Espres
 
 <table>
 <thead>
-  <tr align="center">
+   <tr align="center">
     <th rowspan="2">SoC</th>
     <th rowspan="2">Supported IDF Version</th>
-    <th colspan="2">esp-aws-iot Release</th>
+    <th colspan="3">esp-aws-iot Release</th>
   </tr>
-  <tr align="center">
-    <th>202012.04-LTS</th>
-    <th>202210.01-LTS</th>
+   <tr align="center">
+    <th><a href="https://github.com/espressif/esp-aws-iot/tree/release/202012.04-LTS">202012.04-LTS</a></th>
+    <th><a href="https://github.com/espressif/esp-aws-iot/tree/release/202210.01-LTS">202210.01-LTS</a></th>
+    <th><a href="https://github.com/espressif/esp-aws-iot/tree/master" target="_blank" rel="noopener noreferrer">master branch</a></th>
   </tr>
 </thead>
 <tbody>
-  <tr align="center">
-    <td rowspan="3">ESP32</td>
+   <tr align="center">
+    <td rowspan="4">ESP32</td>
     <td>IDF v4.3</td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
+   <tr align="center">
     <td>IDF v4.4</td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
+   <tr align="center">
     <td>IDF v5.0</td>
     <td></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
-    <td rowspan="3">ESP32-S2</td>
+   <tr align="center">
+    <td>IDF v5.1</td>
+    <td></td>
+    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+  </tr>
+   <tr align="center">
+    <td rowspan="4">ESP32-S2</td>
     <td>IDF v4.3</td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
+   <tr align="center">
     <td>IDF v4.4</td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
+   <tr align="center">
     <td>IDF v5.0</td>
     <td></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
-    <td rowspan="3">ESP32-C3</td>
+   <tr align="center">
+    <td>IDF v5.1</td>
+    <td></td>
+    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+  </tr>
+   <tr align="center">
+    <td rowspan="4">ESP32-C3</td>
     <td>IDF v4.3</td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
+   <tr align="center">
     <td>IDF v4.4</td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
+   <tr align="center">
     <td>IDF v5.0</td>
     <td></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
-    <td rowspan="2">ESP32-S3</td>
+   <tr align="center">
+    <td>IDF v5.1</td>
+    <td></td>
+    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+  </tr>
+   <tr align="center">
+    <td rowspan="3">ESP32-S3</td>
     <td>IDF v4.4</td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
+   <tr align="center">
     <td>IDF v5.0</td>
     <td></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
-  <tr align="center">
-    <td>ESP32-C2</td>
+   <tr align="center">
+    <td>IDF v5.1</td>
+    <td></td>
+    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+  </tr>
+   <tr align="center">
+    <td rowspan="2">ESP32-C2</td>
     <td>IDF v5.0</td>
     <td></td>
-     <td><img src="https://img.shields.io/badge/-supported-green"/></a></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+  </tr>
+   <tr align="center">
+    <td>IDF v5.1</td>
+    <td></td>
+    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
+  </tr>
+   <tr align="center">
+    <td>ESP32-C6</td>
+    <td>IDF v5.1</td>
+    <td></td>
+    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
 </tbody>
 </table>
