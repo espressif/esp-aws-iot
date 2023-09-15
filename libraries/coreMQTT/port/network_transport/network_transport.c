@@ -12,7 +12,7 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
     TlsTransportStatus_t xResult = TLS_TRANSPORT_CONNECT_FAILURE;
     TimeOut_t xTimeout;
 
-    TickType_t xTicksToWait = pxNetworkContext->xTimeout;
+    TickType_t xTicksToWait = pdMS_TO_TICKS( CONFIG_GRI_TRANSPORT_TIMEOUT_MS );
 
     esp_tls_cfg_t xEspTlsConfig = {
         .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCA ),
@@ -25,7 +25,7 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         .ds_data = pxNetworkContext->ds_data,
         .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKey ),
         .clientkey_bytes = pxNetworkContext->pcClientKeySize,
-        .timeout_ms = 1000,
+        .timeout_ms = CONFIG_GRI_TRANSPORT_TIMEOUT_MS,
     };
 
     vTaskSetTimeOutState( &xTimeout );
@@ -102,8 +102,6 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
     fd_set write_fds;
     fd_set errorSet;
 
-    struct timeval timeout = { .tv_usec = 10000, .tv_sec = 0 };
-
     int32_t lBytesSent = -1;
 
     if( ( pvData != NULL ) &&
@@ -112,7 +110,7 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
         ( pxNetworkContext->pxTls != NULL ) )
     {
         TimeOut_t xTimeout;
-        TickType_t xTicksToWait = pxNetworkContext->xTimeout;
+        TickType_t xTicksToWait = pdMS_TO_TICKS( CONFIG_GRI_TRANSPORT_TIMEOUT_MS );
 
         vTaskSetTimeOutState( &xTimeout );
 
@@ -121,6 +119,11 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
             lBytesSent = 0;
             do
             {
+                struct timeval timeout = { 
+                    .tv_usec = ( 1000 * CONFIG_GRI_TRANSPORT_TIMEOUT_MS ) % 1000000, 
+                    .tv_sec = ( CONFIG_GRI_TRANSPORT_TIMEOUT_MS / 1000 )
+                };
+
                 FD_ZERO(&write_fds);
                 FD_SET(lSockFd, &write_fds);
 

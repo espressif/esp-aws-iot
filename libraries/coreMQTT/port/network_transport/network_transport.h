@@ -12,6 +12,10 @@
 #include "transport_interface.h"
 #include "esp_tls.h"
 
+#if !defined( CONFIG_GRI_TRANSPORT_TIMEOUT_MS )
+    #define CONFIG_GRI_TRANSPORT_TIMEOUT_MS    1000
+#endif /* TLS_TRANSPORT_TIMEOUT_MS */
+
 typedef enum TlsTransportStatus
 {
     TLS_TRANSPORT_SUCCESS = 0,              /**< Function successfully completed. */
@@ -55,10 +59,9 @@ struct NetworkContext
     * @brief Disable server name indication (SNI) for a TLS session.
     */
     BaseType_t disableSni;
-    TickType_t xTimeout;
 };
 
-TlsTransportStatus_t xTlsConnect(NetworkContext_t* pxNetworkContext );
+TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext );
 
 TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext );
 
