@@ -430,6 +430,7 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     {
         LogError( ( "Cert read failed" ) );
         result = OTA_PAL_COMBINE_ERR( OtaPalBadSignerCert, 0 );
+        vPortFree( pvSigVerifyContext );
         goto end;
     }
     else
@@ -456,6 +457,7 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
         {
             LogError( ( "Partition mmap failed %d", ret ) );
             result = OTA_PAL_COMBINE_ERR( OtaPalSignatureCheckFailed, 0 );
+            vPortFree( pvSigVerifyContext );
             goto end;
         }
 
@@ -478,7 +480,6 @@ OtaPalStatus_t otaPal_CheckFileSignature( OtaFileContext_t * const pFileContext 
     }
 
 end:
-    vPortFree( pvSigVerifyContext );
     return result;
 }
 
