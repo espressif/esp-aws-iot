@@ -70,7 +70,7 @@ The following table shows esp-aws-iot support with the ESP-IDF support of Espres
    <tr align="center">
     <td>IDF v5.1</td>
     <td></td>
-    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
     <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
    <tr align="center">
@@ -95,7 +95,7 @@ The following table shows esp-aws-iot support with the ESP-IDF support of Espres
    <tr align="center">
     <td>IDF v5.1</td>
     <td></td>
-    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
     <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
    <tr align="center">
@@ -120,7 +120,7 @@ The following table shows esp-aws-iot support with the ESP-IDF support of Espres
    <tr align="center">
     <td>IDF v5.1</td>
     <td></td>
-    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
     <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
    <tr align="center">
@@ -139,7 +139,7 @@ The following table shows esp-aws-iot support with the ESP-IDF support of Espres
    <tr align="center">
     <td>IDF v5.1</td>
     <td></td>
-    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
     <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
    <tr align="center">
@@ -152,14 +152,14 @@ The following table shows esp-aws-iot support with the ESP-IDF support of Espres
    <tr align="center">
     <td>IDF v5.1</td>
     <td></td>
-    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
     <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
    <tr align="center">
     <td>ESP32-C6</td>
     <td>IDF v5.1</td>
     <td></td>
-    <td></td>
+    <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
     <td><img src="https://img.shields.io/badge/-supported-green" alt="Image" width="65" height="20"></td>
   </tr>
 </tbody>
