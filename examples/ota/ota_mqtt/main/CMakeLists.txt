@@ -7,6 +7,7 @@ set(COMPONENT_SRCS
 set(COMPONENT_ADD_INCLUDEDIRS
 	"."
 	"${PROJECT_DIR}/../../../libraries/common/logging/"
+	"${PROJECT_DIR}/../../../libraries/common/posix_compat/"
 	)
 
 idf_component_register(SRCS "${COMPONENT_SRCS}"

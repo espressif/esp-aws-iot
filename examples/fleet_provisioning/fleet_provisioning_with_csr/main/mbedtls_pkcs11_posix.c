@@ -171,7 +171,7 @@ static MbedtlsPkcs11Status_t configureMbedtlsFragmentLength( MbedtlsPkcs11Contex
  *
  * @return Zero on success.
  */
-static int32_t generateRandomBytes( void * pCtx,
+static int generateRandomBytes( void * pCtx,
                                     unsigned char * pRandom,
                                     size_t randomLength );
 
@@ -216,17 +216,32 @@ static bool initializeClientKeys( MbedtlsPkcs11Context_t * pContext,
  *
  * @return Zero on success.
  */
-static int32_t privateKeySigningCallback( void * pContext,
+
+#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
+
+static int privateKeySigningCallback( mbedtls_pk_context* pContext,
                                           mbedtls_md_type_t mdAlg,
                                           const unsigned char * pHash,
                                           size_t hashLen,
                                           unsigned char * pSig,
-#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
                                           size_t SigSize,
-#endif
                                           size_t * pSigLen,
-                                          int32_t ( * pRng )( void *, unsigned char *, size_t ),
+                                          int ( * pRng )( void *,
+                                                              unsigned char *,
+                                                              size_t ),
                                           void * pRngContext );
+#else /* !MBEDTLS_VERSION_NUMBER >= 0x03000000 */
+static int privateKeySigningCallback(void* pContext,
+                                          mbedtls_md_type_t mdAlg,
+                                          const unsigned char * pHash,
+                                          size_t hashLen,
+                                          unsigned char * pSig,
+                                          size_t * pSigLen,
+                                          int ( * pRng )( void *,
+                                                              unsigned char *,
+                                                              size_t ),
+                                          void * pRngContext );
+#endif /* MBEDTLS_VERSION_NUMBER >= 0x03000000 */
 
 /*-----------------------------------------------------------*/
 
@@ -511,7 +526,7 @@ static MbedtlsPkcs11Status_t configureMbedtlsFragmentLength( MbedtlsPkcs11Contex
 
 /*-----------------------------------------------------------*/
 
-static int32_t generateRandomBytes( void * pCtx,
+static int generateRandomBytes( void * pCtx,
                                     unsigned char * pRandom,
                                     size_t randomLength )
 {
@@ -678,23 +693,42 @@ static bool initializeClientKeys( MbedtlsPkcs11Context_t * pContext,
 
 /*-----------------------------------------------------------*/
 
-static int32_t privateKeySigningCallback( void * pContext,
+#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
+
+#define CONTAINER_OF(ptr, type, field) \
+	((type *)(((char *)(ptr)) - offsetof(type, field)))
+
+static int privateKeySigningCallback( mbedtls_pk_context* pContext,
                                           mbedtls_md_type_t mdAlg,
                                           const unsigned char * pHash,
                                           size_t hashLen,
                                           unsigned char * pSig,
-#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
                                           size_t SigSize,
-#endif
                                           size_t * pSigLen,
-                                          int32_t ( * pRng )( void *,
+                                          int ( * pRng )( void *,
                                                               unsigned char *,
                                                               size_t ),
                                           void * pRngContext )
+#else /* !MBEDTLS_VERSION_NUMBER >= 0x03000000 */
+static int privateKeySigningCallback(void* pContext,
+                                          mbedtls_md_type_t mdAlg,
+                                          const unsigned char * pHash,
+                                          size_t hashLen,
+                                          unsigned char * pSig,
+                                          size_t * pSigLen,
+                                          int ( * pRng )( void *,
+                                                              unsigned char *,
+                                                              size_t ),
+                                          void * pRngContext )
+#endif /* MBEDTLS_VERSION_NUMBER >= 0x03000000 */
 {
     CK_RV ret = CKR_OK;
-    int32_t result = 0;
-    MbedtlsPkcs11Context_t * pMbedtlsPkcs11Context = ( MbedtlsPkcs11Context_t * ) pContext;
+    int result = 0;
+#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
+    MbedtlsPkcs11Context_t * pMbedtlsPkcs11Context = ( MbedtlsPkcs11Context_t * ) CONTAINER_OF(pContext, MbedtlsPkcs11Context_t, privKey);
+#else /* !MBEDTLS_VERSION_NUMBER >= 0x03000000 */
+    MbedtlsPkcs11Context_t *pMbedtlsPkcs11Context =  ( MbedtlsPkcs11Context_t * )pContext;
+#endif /* MBEDTLS_VERSION_NUMBER >= 0x03000000 */
     CK_MECHANISM mech = { 0 };
     /* Buffer big enough to hold data to be signed. */
     CK_BYTE toBeSigned[ 256 ];

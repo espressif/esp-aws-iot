@@ -267,18 +267,31 @@ static int extractEcPublicKey( CK_SESSION_HANDLE p11Session,
  * @param[in] pRng Unused.
  * @param[in] pRngContext Unused.
  */
-static int32_t privateKeySigningCallback( void * pContext,
+#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
+
+static int privateKeySigningCallback( mbedtls_pk_context* pContext,
                                           mbedtls_md_type_t mdAlg,
                                           const unsigned char * pHash,
                                           size_t hashLen,
                                           unsigned char * pSig,
-#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
                                           size_t SigSize,
-#endif                                    
                                           size_t * pSigLen,
-                                          int ( * pRng )( void *, unsigned char *, size_t ),
+                                          int ( * pRng )( void *,
+                                                              unsigned char *,
+                                                              size_t ),
                                           void * pRngContext );
-
+#else /* !MBEDTLS_VERSION_NUMBER >= 0x03000000 */
+static int privateKeySigningCallback(void* pContext,
+                                          mbedtls_md_type_t mdAlg,
+                                          const unsigned char * pHash,
+                                          size_t hashLen,
+                                          unsigned char * pSig,
+                                          size_t * pSigLen,
+                                          int ( * pRng )( void *,
+                                                              unsigned char *,
+                                                              size_t ),
+                                          void * pRngContext );
+#endif /* MBEDTLS_VERSION_NUMBER >= 0x03000000 */
 /**
  * @brief MbedTLS random generation callback to generate random values with
  * PKCS #11.
@@ -942,20 +955,33 @@ static int extractEcPublicKey( CK_SESSION_HANDLE p11Session,
 
 /*-----------------------------------------------------------*/
 
-static int32_t privateKeySigningCallback( void * pContext,
+#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
+static int privateKeySigningCallback( mbedtls_pk_context* pContext,
                                           mbedtls_md_type_t mdAlg,
                                           const unsigned char * pHash,
                                           size_t hashLen,
                                           unsigned char * pSig,
-#if (MBEDTLS_VERSION_NUMBER >= 0x03000000)
                                           size_t SigSize,
-#endif
                                           size_t * pSigLen,
-                                          int ( * pRng )( void *, unsigned char *, size_t ),
+                                          int ( * pRng )( void *,
+                                                              unsigned char *,
+                                                              size_t ),
                                           void * pRngContext )
+#else /* !MBEDTLS_VERSION_NUMBER >= 0x03000000 */
+static int privateKeySigningCallback(void* pContext,
+                                          mbedtls_md_type_t mdAlg,
+                                          const unsigned char * pHash,
+                                          size_t hashLen,
+                                          unsigned char * pSig,
+                                          size_t * pSigLen,
+                                          int ( * pRng )( void *,
+                                                              unsigned char *,
+                                                              size_t ),
+                                          void * pRngContext )
+#endif /* MBEDTLS_VERSION_NUMBER >= 0x03000000 */
 {
     CK_RV ret = CKR_OK;
-    int32_t result = 0;
+    int result = 0;
     CK_MECHANISM mech = { 0 };
     CK_BYTE toBeSigned[ 256 ];
     CK_ULONG toBeSignedLen = sizeof( toBeSigned );
