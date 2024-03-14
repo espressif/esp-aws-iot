@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "buzzer.h"
 
 /* Shadow includes */
 #include "shadow_demo_helpers.h"
@@ -228,7 +229,7 @@ static uint8_t buffer[ NETWORK_BUFFER_SIZE ];
 /**
  * @brief The MQTT context used for MQTT operation.
  */
-static MQTTContext_t mqttContext = { 0 };
+ MQTTContext_t mqttContext = { 0 };
 
 /**
  * @brief The network context used for Openssl operation.
@@ -310,7 +311,7 @@ static void cleanupOutgoingPublishAt( uint8_t index );
  * @brief Function to clean up all the outgoing publishes maintained in the
  * array.
  */
-static void cleanupOutgoingPublishes( void );
+ void cleanupOutgoingPublishes( void );
 
 /**
  * @brief Function to clean up the publish packet with the given packet id.
@@ -460,16 +461,18 @@ static int connectToServerWithBackoffRetries( NetworkContext_t * pNetworkContext
                    AWS_IOT_ENDPOINT,
                    AWS_MQTT_PORT ) );
         tlsStatus = xTlsConnect ( pNetworkContext );
-
         if( tlsStatus != TLS_TRANSPORT_SUCCESS )
         {
             /* Generate a random number and get back-off value (in milliseconds) for the next connection retry. */
             backoffAlgStatus = BackoffAlgorithm_GetNextBackoff( &reconnectParams, generateRandomNumber(), &nextRetryBackOff );
+            
+            buzzer_play_error_tune();
 
             if( backoffAlgStatus == BackoffAlgorithmRetriesExhausted )
             {
                 LogError( ( "Connection to the broker failed, all attempts exhausted." ) );
                 returnStatus = EXIT_FAILURE;
+                esp_restart();
             }
             else if( backoffAlgStatus == BackoffAlgorithmSuccess )
             {
@@ -525,7 +528,7 @@ static void cleanupOutgoingPublishAt( uint8_t index )
 
 /*-----------------------------------------------------------*/
 
-static void cleanupOutgoingPublishes( void )
+ void cleanupOutgoingPublishes( void )
 {
     assert( outgoingPublishPackets != NULL );
 
@@ -946,7 +949,7 @@ int32_t SubscribeToTopic( const char * pTopicFilter,
     ( void ) memset( ( void * ) pSubscriptionList, 0x00, sizeof( pSubscriptionList ) );
 
     /* This example subscribes to only one topic and uses QOS1. */
-    pSubscriptionList[ 0 ].qos = MQTTQoS1;
+    pSubscriptionList[ 0 ].qos = MQTTQoS0;
     pSubscriptionList[ 0 ].pTopicFilter = pTopicFilter;
     pSubscriptionList[ 0 ].topicFilterLength = topicFilterLength;
 
@@ -1074,7 +1077,7 @@ int32_t PublishToTopic( const char * pTopicFilter,
     {
         LogInfo( ( "Published payload: %s", pPayload ) );
         /* This example publishes to only one topic and uses QOS1. */
-        outgoingPublishPackets[ publishIndex ].pubInfo.qos = MQTTQoS1;
+        outgoingPublishPackets[ publishIndex ].pubInfo.qos = MQTTQoS0;
         outgoingPublishPackets[ publishIndex ].pubInfo.pTopicName = pTopicFilter;
         outgoingPublishPackets[ publishIndex ].pubInfo.topicNameLength = topicFilterLength;
         outgoingPublishPackets[ publishIndex ].pubInfo.pPayload = pPayload;
