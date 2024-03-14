@@ -1,5 +1,5 @@
-#ifndef SHADOW_CONFIG_H
-#define SHADOW_CONFIG_H
+#ifndef FLEET_PROVISIONING_CONFIG_H
+#define FLEET_PROVISIONING_CONFIG_H
 
 #include "sdkconfig.h"
 #define EXTRACT_ARGS( ... ) __VA_ARGS__
@@ -9,7 +9,7 @@
 /* Logging configurations */
 #if CONFIG_FLEET_PROVISIONING_LOG_ERROR || CONFIG_FLEET_PROVISIONING_LOG_WARN || CONFIG_FLEET_PROVISIONING_LOG_INFO || CONFIG_FLEET_PROVISIONING_LOG_DEBUG
 
-    /* Set logging level for the Device SHADOW component to highest level,
+    /* Set logging level for the Fleet Provisioning component to highest level,
      * so any defined logging level below is printed. */
     #ifdef LOG_LOCAL_LEVEL
         #undef LOG_LOCAL_LEVEL
@@ -59,4 +59,4 @@
     #define LogDebug( message, ... ) ESP_LOGD( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
 #endif
 
-#endif /* SHADOW_CONFIG_H */
+#endif /* FLEET_PROVISIONING_CONFIG_H */
