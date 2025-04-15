@@ -106,12 +106,13 @@ static CK_RV prvGetCertificate( const char * pcLabelName,
                                 uint8_t ** ppucData,
                                 uint32_t * pulDataSize );
 
-static OtaPalStatus_t asn1_to_raw_ecdsa( uint8_t * signature,
+static OtaPalStatus_t asn1_to_raw_ecdsa( const uint8_t * signature,
                                          uint16_t sig_len,
                                          uint8_t * out_signature )
 {
     int ret = 0;
-    const unsigned char * end = signature + sig_len;
+    unsigned char * local_signature_ptr = ( unsigned char * ) signature;
+    const unsigned char * end = local_signature_ptr + sig_len;
     size_t len;
     mbedtls_mpi r = { 0 };
     mbedtls_mpi s = { 0 };
@@ -125,21 +126,21 @@ static OtaPalStatus_t asn1_to_raw_ecdsa( uint8_t * signature,
     mbedtls_mpi_init( &r );
     mbedtls_mpi_init( &s );
 
-    if( ( ret = mbedtls_asn1_get_tag( &signature, end, &len,
+    if( ( ret = mbedtls_asn1_get_tag( &local_signature_ptr, end, &len,
                                       MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE ) ) != 0 )
     {
         LogError( ( "Bad Input Signature" ) );
         goto cleanup;
     }
 
-    if( signature + len != end )
+    if( local_signature_ptr + len != end )
     {
         LogError( ( "Incorrect ASN1 Signature Length" ) );
         goto cleanup;
     }
 
-    if( ( ( ret = mbedtls_asn1_get_mpi( &signature, end, &r ) ) != 0 ) ||
-        ( ( ret = mbedtls_asn1_get_mpi( &signature, end, &s ) ) != 0 ) )
+    if( ( ( ret = mbedtls_asn1_get_mpi( &local_signature_ptr, end, &r ) ) != 0 ) ||
+        ( ( ret = mbedtls_asn1_get_mpi( &local_signature_ptr, end, &s ) ) != 0 ) )
     {
         LogError( ( "ASN1 parsing failed" ) );
         goto cleanup;
@@ -475,7 +476,7 @@ OtaPalStatus_t otaPal_CheckFileSignature( AfrOtaJobDocumentFields_t * const pFil
     }
 
     if( CRYPTO_SignatureVerificationFinal( pvSigVerifyContext, ( char * ) pucSignerCert, ulSignerCertSize,
-                                           pFileContext->signature, pFileContext->signatureLen ) == pdFALSE )
+                                           ( const uint8_t * ) pFileContext->signature, pFileContext->signatureLen ) == pdFALSE )
     {
         LogError( ( "Signature verification failed." ) );
         result = OtaPalSignatureCheckFailed;
@@ -529,7 +530,7 @@ OtaPalStatus_t otaPal_CloseFile( AfrOtaJobDocumentFields_t * const pFileContext 
             {
                 memset( sec_boot_sig->sec_ver, 0x00, sizeof( sec_boot_sig->sec_ver ) );
                 memset( sec_boot_sig->pad, 0xFF, sizeof( sec_boot_sig->pad ) );
-                mainErr = asn1_to_raw_ecdsa( pFileContext->signature, pFileContext->signatureLen, sec_boot_sig->raw_ecdsa_sig );
+                mainErr = asn1_to_raw_ecdsa( ( const uint8_t * ) pFileContext->signature, pFileContext->signatureLen, sec_boot_sig->raw_ecdsa_sig );
 
                 if( mainErr == OtaPalSuccess )
                 {
