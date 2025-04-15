@@ -101,7 +101,7 @@ void CRYPTO_SignatureVerificationUpdate( void * pvContext,
 BaseType_t CRYPTO_SignatureVerificationFinal( void * pvContext,
                                               char * pcSignerCertificate,
                                               size_t xSignerCertificateLength,
-                                              uint8_t * pucSignature,
+                                              const uint8_t * pucSignature,
                                               size_t xSignatureLength );
 #ifdef __cplusplus
 }
