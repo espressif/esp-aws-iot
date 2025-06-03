@@ -1,5 +1,5 @@
-#ifndef SHADOW_CONFIG_H
-#define SHADOW_CONFIG_H
+#ifndef FLEET_PROVISIONING_CONFIG_H
+#define FLEET_PROVISIONING_CONFIG_H
 
 #include "sdkconfig.h"
 #define EXTRACT_ARGS( ... ) __VA_ARGS__
@@ -59,4 +59,4 @@
     #define LogDebug( message, ... ) ESP_LOGD( LIBRARY_LOG_NAME, REMOVE_PARENS( message ), ##__VA_ARGS__ )
 #endif
 
-#endif /* SHADOW_CONFIG_H */
+#endif /* FLEET_PROVISIONING_CONFIG_H */
