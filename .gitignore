@@ -7,3 +7,4 @@ examples/**/build
 examples/**/managed_components
 
 **/.DS_Store
+.vscode

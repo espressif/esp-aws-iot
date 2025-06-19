@@ -117,7 +117,7 @@
  */
 // @N2G: Change partition names.
 #ifdef CONFIG_IDF_TARGET_ESP32
-#define pkcs11configSTORAGE_PARTITION   "rsvd"
+#define pkcs11configSTORAGE_PARTITION   "n2grsv"
 #define NVS_PART_TYPE                   0x45
 #else
 #define pkcs11configSTORAGE_PARTITION   "nvs2"
