@@ -190,3 +190,6 @@ Cell marked as ![alt text][supported] denotes supported combination.
 IDF version support for esp-aws-iot releases is based on [IDF Release Support Schedule](https://github.com/espressif/esp-idf#esp-idf-release-support-schedule).  
 For example, support for IDF v4.4 for Release 202406.01-LTS will expire on 31st July 2024.
 
+## Migration Guide
+
+For detailed steps and examples on migrating from IDF 4 to IDF 5 for applications using functions in `aws_iot_mqtt_client.c` to the new coreMQTT component, refer to the [Migration Guide from IDF 4 to IDF 5](MigrationGuide_IDF4_to_IDF5.md).
