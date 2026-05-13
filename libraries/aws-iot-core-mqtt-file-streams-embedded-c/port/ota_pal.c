@@ -34,20 +34,7 @@
 #include "hal/wdt_hal.h"
 #include "esp_partition.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 
-#include "soc/rtc_cntl_reg.h"
-#else
-#include "soc/lp_wdt_reg.h"
-#include "soc/lp_timer_reg.h"
-#include "soc/lp_analog_peri_reg.h"
-#include "soc/pmu_reg.h"
-#endif
-
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL( 5, 0, 0 )
-    #include "spi_flash_mmap.h"    
-#else
-    #include "esp_spi_flash.h"
-#endif
+#include "spi_flash_mmap.h"
 #include "esp_image_format.h"
 #include "esp_ota_ops.h"
 #include "aws_esp_ota_ops.h"
@@ -503,12 +490,7 @@ static void disable_rtc_wdt()
 {
     LogInfo( ( "Disabling RTC hardware watchdog timer" ) );
 
-    wdt_hal_context_t rtc_wdt_ctx = 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL( 5, 1, 0 )
-    RWDT_HAL_CONTEXT_DEFAULT();
-#else
-    { .inst = WDT_RWDT, .rwdt_dev = &RTCCNTL };
-#endif
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
     wdt_hal_write_protect_disable( &rtc_wdt_ctx );
     wdt_hal_disable( &rtc_wdt_ctx );
