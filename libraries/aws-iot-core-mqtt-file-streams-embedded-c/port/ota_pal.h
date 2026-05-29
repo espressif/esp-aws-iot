@@ -65,6 +65,7 @@ typedef uint32_t OtaPalStatus_t;
 #define    OtaPalActivateFailed            0xecU /*!< @brief The activation of the new OTA image failed. */
 #define    OtaPalFileAbort                 0xedU /*!< @brief Error in low level file abort. */
 #define    OtaPalFileClose                 0xeeU /*!< @brief Error in low level file close. */
+#define    OtaPalRxFileResumeFailed        0xefU /*!< @brief The PAL failed to resume the OTA receive file. */
 
 #define OTA_FILE_SIG_KEY_STR_MAX_LENGTH    32    /*!< Maximum length of the file signature key. */
 
@@ -190,6 +191,30 @@ OtaPalStatus_t otaPal_Abort( AfrOtaJobDocumentFields_t * const pFileContext );
  * OtaPalRxFileCreateFailed is returned for other errors creating the file in the device's non-volatile memory.
  */
 OtaPalStatus_t otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t * const pFileContext );
+
+/**
+ * @brief Resume an OTA receive file from a previously written byte offset.
+ *
+ * @note Opens the update partition context for an already-started image download and
+ * positions writes to continue at ulStartOffset bytes.
+ *
+ * @note The input OtaFileContext_t pFileContext is checked for NULL by the OTA agent
+ * before this function is called.
+ * The device file path is a required field in the OTA job document, so
+ * pFileContext->pFilePath is checked for NULL by the OTA agent before this function
+ * is called.
+ *
+ * @param[in] pFileContext OTA file context information.
+ * @param[in] ulStartOffset Number of bytes already written to the update image.
+ *
+ * @return The OTA PAL layer error code combined with the MCU specific error code.
+ * See OTA Agent error codes information in ota.h.
+ *
+ * OtaPalSuccess is returned when OTA resume context initialization is successful.
+ * OtaPalRxFileResumeFailed is returned for errors resuming the OTA receive context.
+ */
+OtaPalStatus_t otaPal_ResumeFileForRx( AfrOtaJobDocumentFields_t * const pFileContext,
+                                       uint32_t ulStartOffset );
 
 /**
  * @brief Authenticate and close the underlying receive file in the specified OTA context.

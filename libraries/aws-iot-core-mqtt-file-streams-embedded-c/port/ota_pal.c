@@ -231,6 +231,45 @@ OtaPalStatus_t otaPal_CreateFileForRx( AfrOtaJobDocumentFields_t * const pFileCo
     return OtaPalSuccess;
 }
 
+OtaPalStatus_t otaPal_ResumeFileForRx( AfrOtaJobDocumentFields_t * const pFileContext,
+                                       uint32_t ulStartOffset )
+{
+    if( ( pFileContext == NULL ) || ( pFileContext->filepath == NULL ) )
+    {
+        return OtaPalRxFileResumeFailed;
+    }
+
+    const esp_partition_t * update_partition = esp_ota_get_next_update_partition( NULL );
+
+    if( update_partition == NULL )
+    {
+        LogError( ( "Failed to find update partition for resume" ) );
+        return OtaPalRxFileResumeFailed;
+    }
+
+    esp_ota_handle_t update_handle;
+    esp_err_t err = esp_ota_resume( update_partition,
+                                    OTA_SIZE_UNKNOWN,
+                                    ulStartOffset,
+                                    &update_handle );
+
+    if( err != ESP_OK )
+    {
+        LogError( ( "esp_ota_resume failed (%d)", err ) );
+        return OtaPalRxFileResumeFailed;
+    }
+
+    ota_ctx.cur_ota = pFileContext;
+    ota_ctx.update_partition = update_partition;
+    ota_ctx.update_handle = update_handle;
+    ota_ctx.data_write_len = ulStartOffset;
+    ota_ctx.valid_image = false;
+
+    LogInfo( ( "esp_ota_resume succeeded at offset %" PRIu32 "",
+               ulStartOffset ) );
+
+    return OtaPalSuccess;
+}
 
 /* Verify the signature of the specified file. */
 OtaPalStatus_t otaPal_CheckFileSignature( AfrOtaJobDocumentFields_t * const pFileContext )
