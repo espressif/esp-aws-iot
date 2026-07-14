@@ -108,6 +108,9 @@ TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext )
             xResult = TLS_TRANSPORT_DISCONNECT_FAILURE;
         }
 
+        /* Destroy frees the TLS object; clear to avoid a dangling pointer. */
+        pxNetworkContext->pxTls = NULL;
+
         ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
     }
     else
