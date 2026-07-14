@@ -2,19 +2,19 @@ menu "coreHTTP"
 
     menu "Logging"
 
-        config DEVICE_SHADOW_LOG_ERROR
+        config CORE_HTTP_LOG_ERROR
             bool "Enable Error Logging"
             default y
-        
-        config DEVICE_SHADOW_LOG_WARN
+
+        config CORE_HTTP_LOG_WARN
             bool "Enable Warning Logging"
             default n
 
-        config DEVICE_SHADOW_LOG_INFO
+        config CORE_HTTP_LOG_INFO
             bool "Enable Info Logging"
             default y
 
-        config DEVICE_SHADOW_LOG_DEBUG
+        config CORE_HTTP_LOG_DEBUG
             bool "Enable Debug Logging"
             default n
 
