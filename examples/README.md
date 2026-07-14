@@ -30,15 +30,29 @@ Server certificates allow devices to verify that they're communicating with AWS 
 
 As part of creating a device certificate, you downloaded a Private Key (`xxx-private.pem.key`) and a Certificate file (`xxx-certificate.pem.crt`). These keys need to be loaded by the ESP32 to identify itself.
 
-There is currently only one option for how to load the key & cert.
+Examples support more than one way to provide the key and certificate:
 
-* Embed the files into the app binary (default)
+* Embed the files into the app binary (default for most examples)
+* Load credentials from a filesystem partition such as SPIFFS (see the [fleet provisioning](fleet_provisioning/fleet_provisioning_with_csr) example)
+* Read credentials into RAM from NVS or another partition, then pass the buffers to the TLS stack
+* Use a Secure Element (ATECC608A) or [esp_secure_cert_mgr](https://components.espressif.com/components/espressif/esp_secure_cert_mgr) / Digital Signature Peripheral (menuconfig options in several examples; see also the [Security Guide](ota/SecurityGuide.md))
+
+The sections below cover the common demo setups. Applications are not limited to these approaches — any source that yields PEM (or DS-backed) credentials in RAM can be used with the network transport APIs.
 
 ### Embedded Key & Cert into App Binary
 
 Copy the `.pem.key` and `.pem.crt` files to the `main/certs` subdirectory of the example. Rename them by removing the device-specific prefix - the new names are `client.key` and `client.crt`.
 
 As these files are bound to your AWS IoT account, take care not to accidentally commit them to public source control. In a commercial IoT device these files would be flashed to the device via a provisioning step, but for these examples they are compiled in.
+
+### SPIFFS, NVS, and other external storage
+
+Some examples keep credentials off the app binary:
+
+* The [fleet provisioning with CSR](fleet_provisioning/fleet_provisioning_with_csr) example loads claim credentials from a SPIFFS image (`spiffs_image/certs/`) and can store the provisioned certificate and private key in NVS.
+* Mutual-auth demos (for example [HTTP mutual auth](http/http_mutual_auth) and [MQTT mutual auth](mqtt/tls_mutual_auth)) can use Secure Element or `esp_secure_cert_mgr` via `idf.py menuconfig` under Example Configuration, instead of embedded `client.crt` / `client.key`.
+
+For production devices, prefer not embedding long-lived private keys in the firmware image when a secure storage option is available.
 
 # Troubleshooting
 
