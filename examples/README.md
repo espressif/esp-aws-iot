@@ -35,7 +35,7 @@ Examples support more than one way to provide the key and certificate:
 * Embed the files into the app binary (default for most examples)
 * Load credentials from a filesystem partition such as SPIFFS (see the [fleet provisioning](fleet_provisioning/fleet_provisioning_with_csr) example)
 * Read credentials into RAM from NVS or another partition, then pass the buffers to the TLS stack
-* Use a Secure Element (ATECC608A) or [esp_secure_cert_mgr](https://components.espressif.com/components/espressif/esp_secure_cert_mgr) / Digital Signature Peripheral (menuconfig options in several examples; see also the [Security Guide](ota/SecurityGuide.md))
+* Use a Secure Element (ATECC608A) or [esp_secure_cert_mgr](https://components.espressif.com/components/espressif/esp_secure_cert_mgr) / Digital Signature Peripheral (menuconfig options in several examples; see also the [Security Guide](https://github.com/espressif/esp-aws-iot/blob/release/202210.01-LTS/examples/ota/SecurityGuide.md))
 
 The sections below cover the common demo setups. Applications are not limited to these approaches — any source that yields PEM (or DS-backed) credentials in RAM can be used with the network transport APIs.
 
