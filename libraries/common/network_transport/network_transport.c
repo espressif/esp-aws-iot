@@ -7,7 +7,6 @@
 #include "esp_tls.h"
 #include "sys/socket.h"
 #include "network_transport.h"
-#include "sdkconfig.h"
 
 #define TAG "network_transport"
 
@@ -79,8 +78,6 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
             {
                 esp_tls_conn_destroy( pxNetworkContext->pxTls );
                 pxNetworkContext->pxTls = NULL;
-            } else 
-            {
             }
         }
         ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
@@ -107,6 +104,9 @@ TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext )
         {
             xResult = TLS_TRANSPORT_DISCONNECT_FAILURE;
         }
+
+        /* Destroy frees the TLS object; clear to avoid a dangling pointer. */
+        pxNetworkContext->pxTls = NULL;
 
         ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
     }

@@ -1,0 +1,6 @@
+name: 'network_transport'
+license: 'Apache-2.0'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Espressif Systems (Shanghai) CO LTD'
+description: 'Shared ESP-TLS network transport used by coreMQTT and coreHTTP.'
+url: https://github.com/espressif/esp-aws-iot
