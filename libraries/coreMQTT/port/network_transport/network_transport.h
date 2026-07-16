@@ -31,7 +31,10 @@ struct NetworkContext
     esp_tls_t* pxTls;
     const char *pcHostname;          /**< @brief Server host name. */
     int xPort;                       /**< @brief Server port in host-order. */
-    const char *pcServerRootCA;      /**< @brief Trusted server root certificate bytes. */
+    const char *pcServerRootCA;      /**< @brief Trusted server root certificate bytes.
+                                                 If NULL and CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+                                                 is enabled, the ESP-IDF certificate bundle is
+                                                 used instead. */
     uint32_t pcServerRootCASize;     /**< @brief Number of trusted server root certificate bytes. */
     const char *pcClientCert;        /**< @brief Client certificate bytes. */
     uint32_t pcClientCertSize;       /**< @brief Number of client certificate bytes. */

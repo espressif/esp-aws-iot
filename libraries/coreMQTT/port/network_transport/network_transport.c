@@ -9,6 +9,10 @@
 #include "network_transport.h"
 #include "sdkconfig.h"
 
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
+
 #define TAG "network_transport"
 
 Timeouts_t timeouts = { .connectionTimeoutMs = 4000, .sendTimeoutMs = 10000, .recvTimeoutMs = 2000 };
@@ -33,8 +37,6 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
     TlsTransportStatus_t xResult = TLS_TRANSPORT_CONNECT_FAILURE;
 
     esp_tls_cfg_t xEspTlsConfig = {
-        .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCA ),
-        .cacert_bytes = pxNetworkContext->pcServerRootCASize,
         .clientcert_buf = (const unsigned char*) ( pxNetworkContext->pcClientCert ),
         .clientcert_bytes = pxNetworkContext->pcClientCertSize,
         .skip_common_name = pxNetworkContext->disableSni,
@@ -46,6 +48,20 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         .timeout_ms = timeouts.connectionTimeoutMs,
         .non_block = false,
     };
+
+    /* Use an explicit server root CA when provided; otherwise fall back to the
+     * ESP-IDF certificate bundle if it is enabled in the build. */
+    if( pxNetworkContext->pcServerRootCA != NULL )
+    {
+        xEspTlsConfig.cacert_buf = ( const unsigned char* ) ( pxNetworkContext->pcServerRootCA );
+        xEspTlsConfig.cacert_bytes = pxNetworkContext->pcServerRootCASize;
+    }
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+    else
+    {
+        xEspTlsConfig.crt_bundle_attach = esp_crt_bundle_attach;
+    }
+#endif
 
     if( xSemaphoreTake( pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY ) == pdTRUE )
     {
