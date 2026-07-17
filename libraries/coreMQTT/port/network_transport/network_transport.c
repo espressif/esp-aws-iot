@@ -144,6 +144,13 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
             esp_err_t xError = esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
             if( xError == ESP_OK )
             {
+                /* Check if socket FD is within valid bounds for select() */
+                if ( lSockFd >= FD_SETSIZE || lSockFd < 0 ) {
+                    ESP_LOGE( TAG, "Socket FD %d < 0 or >= FD_SETSIZE %d, cannot use select()", lSockFd, FD_SETSIZE );
+                    lBytesSent = -1;
+                    goto transport_send_semaphore_give;
+                }
+
                 unsigned char * pucData = ( unsigned char * ) pvData;
                 lBytesSent = 0;
                 do
@@ -195,6 +202,7 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
                        ( lBytesSent < uxDataLen ) &&
                        ( lBytesSent >= 0 ) );
             }
+transport_send_semaphore_give:
             xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
         }
     }
@@ -228,10 +236,13 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
             lBytesRead = 0;
 
             esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
-            FD_ZERO( &read_fds );
-            FD_SET( lSockFd, &read_fds );
-            FD_ZERO( &error_fds );
-            FD_SET( lSockFd, &error_fds );
+
+            /* Check if socket FD is within valid bounds for select() */
+            if ( lSockFd >= FD_SETSIZE || lSockFd < 0 ) {
+                ESP_LOGE( TAG, "Socket FD %d < 0 or >= FD_SETSIZE %d, cannot use select()", lSockFd, FD_SETSIZE );
+                lBytesRead = -1;
+                goto transport_recv_semaphore_give;
+            }
 
             do
             {
@@ -249,6 +260,12 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
                 {
                     suseconds_t elapsed_time_usec = ( xTaskGetTickCount() - start_tick ) * portTICK_PERIOD_MS * 1000;
                     timeout.tv_usec = ( timeout.tv_usec - elapsed_time_usec >= 0 ) ? timeout.tv_usec - elapsed_time_usec : 0;
+
+                    /* Zero and set before every select() call to avoid stale file descriptors */
+                    FD_ZERO( &read_fds );
+                    FD_SET( lSockFd, &read_fds );
+                    FD_ZERO( &error_fds );
+                    FD_SET( lSockFd, &error_fds );
 
                     int lSelectResult = select( lSockFd + 1, &read_fds, NULL, &error_fds, &timeout );
                     if ( ( lSelectResult < 0 ) || FD_ISSET( lSockFd, &error_fds ) ) {
@@ -271,6 +288,7 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
                     ( lBytesRead == 0 ) );
 
 
+transport_recv_semaphore_give:
             ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
         }
     }
