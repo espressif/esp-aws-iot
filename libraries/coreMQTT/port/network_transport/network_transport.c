@@ -142,10 +142,17 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
         {
             int lSockFd = -1;
             esp_err_t xError = esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
-            if( xError == ESP_OK )
+
+            if( xError != ESP_OK )
+            {
+                ESP_LOGE( TAG, "Failed to get the TLS socket descriptor: %s",
+                          esp_err_to_name( xError ) );
+            }
+            else
             {
                 /* Check if socket FD is within valid bounds for select() */
-                if ( lSockFd >= FD_SETSIZE || lSockFd < 0 ) {
+                if( ( lSockFd < 0 ) || ( lSockFd >= FD_SETSIZE ) )
+                {
                     ESP_LOGE( TAG, "Socket FD %d < 0 or >= FD_SETSIZE %d, cannot use select()", lSockFd, FD_SETSIZE );
                     lBytesSent = -1;
                     goto transport_send_semaphore_give;
@@ -203,7 +210,7 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
                        ( lBytesSent >= 0 ) );
             }
 transport_send_semaphore_give:
-            xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
+            ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
         }
     }
 
@@ -235,10 +242,19 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
 
             lBytesRead = 0;
 
-            esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
+            esp_err_t xError = esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
 
-            /* Check if socket FD is within valid bounds for select() */
-            if ( lSockFd >= FD_SETSIZE || lSockFd < 0 ) {
+            if( xError != ESP_OK )
+            {
+                ESP_LOGE( TAG, "Failed to get the TLS socket descriptor: %s",
+                          esp_err_to_name( xError ) );
+                lBytesRead = -1;
+                goto transport_recv_semaphore_give;
+            }
+
+            /* Check if socket FD is within valid bounds for select(). */
+            if( ( lSockFd < 0 ) || ( lSockFd >= FD_SETSIZE ) )
+            {
                 ESP_LOGE( TAG, "Socket FD %d < 0 or >= FD_SETSIZE %d, cannot use select()", lSockFd, FD_SETSIZE );
                 lBytesRead = -1;
                 goto transport_recv_semaphore_give;
@@ -268,7 +284,8 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
                     FD_SET( lSockFd, &error_fds );
 
                     int lSelectResult = select( lSockFd + 1, &read_fds, NULL, &error_fds, &timeout );
-                    if ( ( lSelectResult < 0 ) || FD_ISSET( lSockFd, &error_fds ) ) {
+                    if( ( lSelectResult < 0 ) || ( FD_ISSET( lSockFd, &error_fds ) != 0 ) )
+                    {
                         ESP_LOGE( TAG, "Error reading the message" );
                         lBytesRead = lResult = -1;
                     }
@@ -284,8 +301,8 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
                     lBytesRead = ( int32_t ) lResult;
                 }
             }
-            while ( ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE ) &&
-                    ( lBytesRead == 0 ) );
+            while( ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE ) &&
+                   ( lBytesRead == 0 ) );
 
 
 transport_recv_semaphore_give:
