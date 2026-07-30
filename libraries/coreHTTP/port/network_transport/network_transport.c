@@ -3,12 +3,24 @@
 #include <string.h>
 #include "esp_log.h"
 #include "esp_tls.h"
+#include "esp_idf_version.h"
 #include "network_transport.h"
 #include "sdkconfig.h"
+
+#define TAG "network_transport"
 
 TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
 {
     TlsTransportStatus_t xRet = TLS_TRANSPORT_SUCCESS;
+
+#if !NETWORK_TRANSPORT_HAS_KEY_CONFIG && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL( 6, 0, 0 )
+    if( pxNetworkContext->use_secure_element )
+    {
+        ESP_LOGE( TAG,
+                  "Legacy ATECC608A secure-element TLS is not supported on ESP-IDF 6.x" );
+        return TLS_TRANSPORT_INVALID_PARAMETER;
+    }
+#endif
 
     esp_tls_cfg_t xEspTlsConfig = {
         .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCA ),
@@ -17,7 +29,12 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         .clientcert_bytes = pxNetworkContext->pcClientCertSize,
         .skip_common_name = pxNetworkContext->disableSni,
         .alpn_protos = pxNetworkContext->pAlpnProtos,
+#if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+        .client_key = pxNetworkContext->client_key,
+#elif ESP_IDF_VERSION < ESP_IDF_VERSION_VAL( 6, 0, 0 )
         .use_secure_element = pxNetworkContext->use_secure_element,
+#endif /* ESP-IDF 6.x without the unified key interface backport:
+          esp-tls has no secure element support at all. */
         .ds_data = pxNetworkContext->ds_data,
         .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKey ),
         .clientkey_bytes = pxNetworkContext->pcClientKeySize,

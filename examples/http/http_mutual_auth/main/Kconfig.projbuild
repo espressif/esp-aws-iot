@@ -28,13 +28,23 @@ menu "Example Configuration"
 
         config EXAMPLE_USE_SECURE_ELEMENT
         bool "Use secure element (ATECC608A)"
-        depends on (IDF_TARGET_ESP32 || IDF_TARGET_ESP32C2) && ESP_TLS_USING_MBEDTLS
-        # To confirm that we are satisfying the dependencies of secure element
+        depends on ESP_TLS_USING_MBEDTLS
+        # At most one of the two symbols below exists per ESP-IDF version;
+        # selecting an undefined one is ignored with a Kconfig warning.
+        # ESP-IDF < 6.0: mbedTLS ALT integration via esp-tls.
         select ESP_TLS_USE_SECURE_ELEMENT
+        # ESP-IDF 6.x with the unified key interface: PSA Crypto opaque driver.
+        select MBEDTLS_SECURE_ELEMENT_DRIVER_ENABLED
         help
-            Enable the use of secure element for the example.
-            The esp-cryptoauthlib component is required for enabling
-            this option.
+            Enable the use of ATECC608A secure element for the example.
+            On ESP-IDF 6.x this uses the PSA Crypto opaque driver interface
+            (unified key interface) via esp-cryptoauthlib; on ESP-IDF < 6.0
+            it uses the mbedTLS ALT integration in esp-tls. In both cases the
+            private key remains on the secure element and is never exposed.
+            On ESP-IDF 6.x the unified key interface (esp_key_config.h) is
+            required: available on master (v6.2) and on release/v6.0 (after
+            v6.0.2) and release/v6.1. Older 6.x checkouts fail with a
+            compile-time error.
 
         config EXAMPLE_USE_ESP_SECURE_CERT_MGR
         bool "Use ESP Secure Certificate Manager"

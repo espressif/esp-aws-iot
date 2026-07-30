@@ -36,6 +36,15 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
 {
     TlsTransportStatus_t xResult = TLS_TRANSPORT_CONNECT_FAILURE;
 
+#if !NETWORK_TRANSPORT_HAS_KEY_CONFIG && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL( 6, 0, 0 )
+    if( pxNetworkContext->use_secure_element )
+    {
+        ESP_LOGE( TAG,
+                  "Legacy ATECC608A secure-element TLS is not supported on ESP-IDF 6.x" );
+        return TLS_TRANSPORT_INVALID_PARAMETER;
+    }
+#endif
+
     esp_tls_cfg_t xEspTlsConfig = {
         .clientcert_buf = (const unsigned char*) ( pxNetworkContext->pcClientCert ),
         .clientcert_bytes = pxNetworkContext->pcClientCertSize,

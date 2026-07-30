@@ -39,9 +39,20 @@
 
 /* Transport interface implementation include header for TLS. */
 #include "network_transport.h"
+#include "esp_idf_version.h"
        
 #ifdef CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR
     #include "esp_secure_cert_read.h"    
+#endif
+
+#ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    /* NETWORK_TRANSPORT_HAS_KEY_CONFIG comes from network_transport.h. */
+    #if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+        #include "esp_atca_psa.h"
+static esp_atca_psa_client_ctx_t se_ctx;
+    #elif ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL( 6, 0, 0 )
+        #error "This ESP-IDF 6.x checkout has no secure element support: the mbedTLS ALT integration was removed in v6.0 and this version predates the unified key interface (esp_key_config.h) + PSA secure element driver backports. Use ESP-IDF <= v5.5, or a 6.x with the backports (release/v6.0 after v6.0.2, release/v6.1, or master)."
+    #endif
 #endif
 
 extern const char root_cert_auth_start[] asm("_binary_root_cert_auth_crt_start");
@@ -159,7 +170,21 @@ static int32_t connectToServer( NetworkContext_t * pNetworkContext )
     pNetworkContext->xTlsContextSemaphore = xSemaphoreCreateMutexStatic(&xTlsContextSemaphoreBuffer);
 
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
+    #if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+    esp_err_t se_ret = esp_atca_init_psa_client( &se_ctx, &( esp_atca_psa_client_config_t ) {
+        .slot_id = 0,
+    } );
+    if( se_ret != ESP_OK )
+    {
+        LogError( ( "esp_atca_init_psa_client failed: %d", ( int ) se_ret ) );
+        return EXIT_FAILURE;
+    }
+    pNetworkContext->pcClientCert = ( const char * ) se_ctx.device_cert;
+    pNetworkContext->pcClientCertSize = se_ctx.device_cert_len;
+    pNetworkContext->client_key = &se_ctx.key_config;
+#else
     pNetworkContext->use_secure_element = true;
+    #endif
 
 #elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
     if (esp_secure_cert_get_device_cert(&pNetworkContext->pcClientCert, &pNetworkContext->pcClientCertSize) != ESP_OK) {
@@ -336,7 +361,9 @@ static int32_t sendHttpRequest( const TransportInterface_t * pTransportInterface
 static void cleanupESPSecureMgrCerts( NetworkContext_t * pNetworkContext )
 {
 #ifdef CONFIG_EXAMPLE_USE_SECURE_ELEMENT
-    /* Nothing to be freed */
+    #if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+    esp_atca_free_psa_client( &se_ctx );
+    #endif /* On IDF < 6.0 esp-tls owns the secure element context; nothing to free. */
 #elif defined(CONFIG_EXAMPLE_USE_ESP_SECURE_CERT_MGR)
     esp_secure_cert_free_device_cert(&pNetworkContext->pcClientCert);
 #ifdef CONFIG_ESP_SECURE_CERT_DS_PERIPHERAL
