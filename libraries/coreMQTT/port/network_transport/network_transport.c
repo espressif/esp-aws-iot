@@ -41,7 +41,12 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
         .clientcert_bytes = pxNetworkContext->pcClientCertSize,
         .skip_common_name = pxNetworkContext->disableSni,
         .alpn_protos = pxNetworkContext->pAlpnProtos,
+#if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+        .client_key = pxNetworkContext->client_key,
+#elif ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(6, 0, 0)
         .use_secure_element = pxNetworkContext->use_secure_element,
+#endif /* ESP-IDF 6.x without the unified key interface backport:
+          esp-tls has no secure element support at all. */
         .ds_data = pxNetworkContext->ds_data,
         .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKey ),
         .clientkey_bytes = pxNetworkContext->pcClientKeySize,
