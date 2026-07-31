@@ -17,6 +17,17 @@
 
 Timeouts_t timeouts = { .connectionTimeoutMs = 4000, .sendTimeoutMs = 10000, .recvTimeoutMs = 2000 };
 
+static void prvTicksToTimeval( TickType_t xTicksToWait,
+                               struct timeval * pxTimeout )
+{
+    uint64_t ullRemainingUs = ( uint64_t ) xTicksToWait *
+                              ( uint64_t ) portTICK_PERIOD_MS *
+                              1000ULL;
+
+    pxTimeout->tv_sec = ( time_t ) ( ullRemainingUs / 1000000ULL );
+    pxTimeout->tv_usec = ( suseconds_t ) ( ullRemainingUs % 1000000ULL );
+}
+
 void vTlsSetConnectTimeout( uint16_t connectionTimeoutMs )
 {
     timeouts.connectionTimeoutMs = connectionTimeoutMs;
@@ -164,9 +175,7 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
         TimeOut_t xTimeout;
         vTaskSetTimeOutState( &xTimeout );
 
-        struct timeval timeout = { .tv_usec = timeouts.sendTimeoutMs * 1000, .tv_sec = 0 };
         TickType_t xTicksToWait = pdMS_TO_TICKS( timeouts.sendTimeoutMs );
-        TickType_t start_tick = xTaskGetTickCount();
 
         if( xSemaphoreTake( pxNetworkContext->xTlsContextSemaphore, xTicksToWait ) == pdTRUE )
         {
@@ -195,14 +204,21 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
                     fd_set write_fds;
                     fd_set error_fds;
                     int lSelectResult = -1;
+                    struct timeval timeout;
+
+                    if( ( timeouts.sendTimeoutMs > 0U ) &&
+                        ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) != pdFALSE ) )
+                    {
+                        break;
+                    }
+
+                    prvTicksToTimeval( xTicksToWait, &timeout );
 
                     FD_ZERO( &write_fds );
                     FD_SET( lSockFd, &write_fds );
                     FD_ZERO( &error_fds );
                     FD_SET( lSockFd, &error_fds );
 
-                    suseconds_t elapsed_time_usec = ( xTaskGetTickCount() - start_tick ) * portTICK_PERIOD_MS * 1000;
-                    timeout.tv_usec = ( timeout.tv_usec - elapsed_time_usec >= 0 ) ? timeout.tv_usec - elapsed_time_usec : 0;
                     lSelectResult = select( lSockFd + 1, NULL, &write_fds, &error_fds, &timeout );
 
                     if( lSelectResult < 0 )
@@ -238,6 +254,15 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
                 while( ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE ) &&
                        ( lBytesSent < uxDataLen ) &&
                        ( lBytesSent >= 0 ) );
+
+                if( ( lBytesSent >= 0 ) &&
+                    ( ( size_t ) lBytesSent < uxDataLen ) )
+                {
+                    ESP_LOGE( TAG, "TLS send timed out before the buffer was complete" );
+                    ( void ) esp_tls_conn_destroy( pxNetworkContext->pxTls );
+                    pxNetworkContext->pxTls = NULL;
+                    lBytesSent = -1;
+                }
             }
 transport_send_semaphore_give:
             ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
@@ -261,8 +286,6 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
         vTaskSetTimeOutState( &xTimeout );
 
         TickType_t xTicksToWait = pdMS_TO_TICKS( timeouts.recvTimeoutMs );
-        struct timeval timeout = {.tv_usec = timeouts.recvTimeoutMs * 1000, .tv_sec = 0};
-        TickType_t start_tick = xTaskGetTickCount();
 
         if( xSemaphoreTake( pxNetworkContext->xTlsContextSemaphore, xTicksToWait ) == pdTRUE )
         {
@@ -304,8 +327,15 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
                 else if( ( lResult == MBEDTLS_ERR_SSL_WANT_WRITE ) ||
                          ( lResult == MBEDTLS_ERR_SSL_WANT_READ ) )
                 {
-                    suseconds_t elapsed_time_usec = ( xTaskGetTickCount() - start_tick ) * portTICK_PERIOD_MS * 1000;
-                    timeout.tv_usec = ( timeout.tv_usec - elapsed_time_usec >= 0 ) ? timeout.tv_usec - elapsed_time_usec : 0;
+                    struct timeval timeout;
+
+                    if( ( timeouts.recvTimeoutMs > 0U ) &&
+                        ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) != pdFALSE ) )
+                    {
+                        break;
+                    }
+
+                    prvTicksToTimeval( xTicksToWait, &timeout );
 
                     /* Zero and set before every select() call to avoid stale file descriptors */
                     FD_ZERO( &read_fds );
