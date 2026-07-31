@@ -1,3 +1,6 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  espressif/esp_secure_cert_mgr: "^2.0.5"
+  espressif/esp_secure_cert_mgr: "^2.8.0"
+  # 3.7.9~2 is the first release with the PSA Crypto secure element
+  # integration (esp_atca_psa.h), needed for ESP-IDF 6.x.
+  espressif/esp-cryptoauthlib: "^3.7.9~2"

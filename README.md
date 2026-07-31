@@ -28,7 +28,7 @@ This SDK enables AWS IoT cloud connectivity with ESP32-based platforms using the
 - Please refer to the [Security Guide](https://github.com/espressif/esp-aws-iot/blob/release/202210.01-LTS/examples/ota/SecurityGuide.md) for steps to enable Security Features on your Espressif chip.
   - This SDK supports multiple ways to securely store the PKI credentials.
   - The default method is to use PKI credentials which are embedded in the binary, using the certs from the `certs/` in every example. 
-  - For using Secure Element (ATECC608A), you will need to use [esp-cryptoauthlib](https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf).
+  - ATECC608A credentials use the legacy mbedTLS ALT integration on ESP-IDF v5.x and the unified key interface with a PSA opaque-key driver on supported ESP-IDF v6.x checkouts.
   - The Security Guide includes detailed steps and pointers to configure and use the Digital Signature Peripheral on supported chips, using [esp_secure_cert_mgr](https://components.espressif.com/components/espressif/esp_secure_cert_mgr).
 
 ## Supported SoCs

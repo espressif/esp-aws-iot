@@ -5,6 +5,21 @@
 #include "freertos/semphr.h"
 #include "transport_interface.h"
 #include "esp_tls.h"
+#include "esp_idf_version.h"
+
+/* Detect the unified key interface by capability instead of by version:
+ * it was added to ESP-IDF master and backported to release branches. */
+#ifdef __has_include
+    #if __has_include("esp_key_config.h")
+        #define NETWORK_TRANSPORT_HAS_KEY_CONFIG 1
+    #endif
+#endif
+#ifndef NETWORK_TRANSPORT_HAS_KEY_CONFIG
+    #define NETWORK_TRANSPORT_HAS_KEY_CONFIG 0
+#endif
+#if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+    #include "esp_key_config.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,8 +50,13 @@ struct NetworkContext
     uint32_t pcClientCertSize;       /**< @brief Number of client certificate bytes. */
     const char *pcClientKey;         /**< @brief Client certificate's private key bytes. */
     uint32_t pcClientKeySize;        /**< @brief Number of client certificate's private key bytes. */
+#if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+    const esp_key_config_t *client_key; /**< @brief Unified key config for PSA-based keys (e.g., secure element). */
+#else
     bool use_secure_element;         /**< @brief Boolean representing the use of secure element
-                                                 for the TLS connection. */
+                                                 for the TLS connection. Only functional on
+                                                 ESP-IDF < 6.0. */
+#endif
     void *ds_data;                   /**< @brief Pointer for digital signature peripheral context */
 
     /**

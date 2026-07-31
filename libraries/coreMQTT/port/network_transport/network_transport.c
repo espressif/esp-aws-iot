@@ -9,9 +9,24 @@
 #include "network_transport.h"
 #include "sdkconfig.h"
 
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
+
 #define TAG "network_transport"
 
 Timeouts_t timeouts = { .connectionTimeoutMs = 4000, .sendTimeoutMs = 10000, .recvTimeoutMs = 2000 };
+
+static void prvTicksToTimeval( TickType_t xTicksToWait,
+                               struct timeval * pxTimeout )
+{
+    uint64_t ullRemainingUs = ( uint64_t ) xTicksToWait *
+                              ( uint64_t ) portTICK_PERIOD_MS *
+                              1000ULL;
+
+    pxTimeout->tv_sec = ( time_t ) ( ullRemainingUs / 1000000ULL );
+    pxTimeout->tv_usec = ( suseconds_t ) ( ullRemainingUs % 1000000ULL );
+}
 
 void vTlsSetConnectTimeout( uint16_t connectionTimeoutMs )
 {
@@ -32,20 +47,46 @@ TlsTransportStatus_t xTlsConnect( NetworkContext_t* pxNetworkContext )
 {
     TlsTransportStatus_t xResult = TLS_TRANSPORT_CONNECT_FAILURE;
 
+#if !NETWORK_TRANSPORT_HAS_KEY_CONFIG && ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL( 6, 0, 0 )
+    if( pxNetworkContext->use_secure_element )
+    {
+        ESP_LOGE( TAG,
+                  "Legacy ATECC608A secure-element TLS is not supported on ESP-IDF 6.x" );
+        return TLS_TRANSPORT_INVALID_PARAMETER;
+    }
+#endif
+
     esp_tls_cfg_t xEspTlsConfig = {
-        .cacert_buf = (const unsigned char*) ( pxNetworkContext->pcServerRootCA ),
-        .cacert_bytes = pxNetworkContext->pcServerRootCASize,
         .clientcert_buf = (const unsigned char*) ( pxNetworkContext->pcClientCert ),
         .clientcert_bytes = pxNetworkContext->pcClientCertSize,
         .skip_common_name = pxNetworkContext->disableSni,
         .alpn_protos = pxNetworkContext->pAlpnProtos,
+#if NETWORK_TRANSPORT_HAS_KEY_CONFIG
+        .client_key = pxNetworkContext->client_key,
+#elif ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(6, 0, 0)
         .use_secure_element = pxNetworkContext->use_secure_element,
+#endif /* ESP-IDF 6.x without the unified key interface backport:
+          esp-tls has no secure element support at all. */
         .ds_data = pxNetworkContext->ds_data,
         .clientkey_buf = ( const unsigned char* )( pxNetworkContext->pcClientKey ),
         .clientkey_bytes = pxNetworkContext->pcClientKeySize,
         .timeout_ms = timeouts.connectionTimeoutMs,
         .non_block = false,
     };
+
+    /* Use an explicit server root CA when provided; otherwise fall back to the
+     * ESP-IDF certificate bundle if it is enabled in the build. */
+    if( pxNetworkContext->pcServerRootCA != NULL )
+    {
+        xEspTlsConfig.cacert_buf = ( const unsigned char* ) ( pxNetworkContext->pcServerRootCA );
+        xEspTlsConfig.cacert_bytes = pxNetworkContext->pcServerRootCASize;
+    }
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+    else
+    {
+        xEspTlsConfig.crt_bundle_attach = esp_crt_bundle_attach;
+    }
+#endif
 
     if( xSemaphoreTake( pxNetworkContext->xTlsContextSemaphore, portMAX_DELAY ) == pdTRUE )
     {
@@ -108,6 +149,9 @@ TlsTransportStatus_t xTlsDisconnect( NetworkContext_t* pxNetworkContext )
             xResult = TLS_TRANSPORT_DISCONNECT_FAILURE;
         }
 
+        /* Destroy frees the TLS object; clear to avoid a dangling pointer. */
+        pxNetworkContext->pxTls = NULL;
+
         ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
     }
     else
@@ -131,16 +175,28 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
         TimeOut_t xTimeout;
         vTaskSetTimeOutState( &xTimeout );
 
-        struct timeval timeout = { .tv_usec = timeouts.sendTimeoutMs * 1000, .tv_sec = 0 };
         TickType_t xTicksToWait = pdMS_TO_TICKS( timeouts.sendTimeoutMs );
-        TickType_t start_tick = xTaskGetTickCount();
 
         if( xSemaphoreTake( pxNetworkContext->xTlsContextSemaphore, xTicksToWait ) == pdTRUE )
         {
             int lSockFd = -1;
             esp_err_t xError = esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
-            if( xError == ESP_OK )
+
+            if( xError != ESP_OK )
             {
+                ESP_LOGE( TAG, "Failed to get the TLS socket descriptor: %s",
+                          esp_err_to_name( xError ) );
+            }
+            else
+            {
+                /* Check if socket FD is within valid bounds for select() */
+                if( ( lSockFd < 0 ) || ( lSockFd >= FD_SETSIZE ) )
+                {
+                    ESP_LOGE( TAG, "Socket FD %d < 0 or >= FD_SETSIZE %d, cannot use select()", lSockFd, FD_SETSIZE );
+                    lBytesSent = -1;
+                    goto transport_send_semaphore_give;
+                }
+
                 unsigned char * pucData = ( unsigned char * ) pvData;
                 lBytesSent = 0;
                 do
@@ -148,14 +204,21 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
                     fd_set write_fds;
                     fd_set error_fds;
                     int lSelectResult = -1;
+                    struct timeval timeout;
+
+                    if( ( timeouts.sendTimeoutMs > 0U ) &&
+                        ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) != pdFALSE ) )
+                    {
+                        break;
+                    }
+
+                    prvTicksToTimeval( xTicksToWait, &timeout );
 
                     FD_ZERO( &write_fds );
                     FD_SET( lSockFd, &write_fds );
                     FD_ZERO( &error_fds );
                     FD_SET( lSockFd, &error_fds );
 
-                    suseconds_t elapsed_time_usec = ( xTaskGetTickCount() - start_tick ) * portTICK_PERIOD_MS * 1000;
-                    timeout.tv_usec = ( timeout.tv_usec - elapsed_time_usec >= 0 ) ? timeout.tv_usec - elapsed_time_usec : 0;
                     lSelectResult = select( lSockFd + 1, NULL, &write_fds, &error_fds, &timeout );
 
                     if( lSelectResult < 0 )
@@ -191,8 +254,18 @@ int32_t espTlsTransportSend( NetworkContext_t* pxNetworkContext,
                 while( ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE ) &&
                        ( lBytesSent < uxDataLen ) &&
                        ( lBytesSent >= 0 ) );
+
+                if( ( lBytesSent >= 0 ) &&
+                    ( ( size_t ) lBytesSent < uxDataLen ) )
+                {
+                    ESP_LOGE( TAG, "TLS send timed out before the buffer was complete" );
+                    ( void ) esp_tls_conn_destroy( pxNetworkContext->pxTls );
+                    pxNetworkContext->pxTls = NULL;
+                    lBytesSent = -1;
+                }
             }
-            xSemaphoreGive(pxNetworkContext->xTlsContextSemaphore);
+transport_send_semaphore_give:
+            ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
         }
     }
 
@@ -213,8 +286,6 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
         vTaskSetTimeOutState( &xTimeout );
 
         TickType_t xTicksToWait = pdMS_TO_TICKS( timeouts.recvTimeoutMs );
-        struct timeval timeout = {.tv_usec = timeouts.recvTimeoutMs * 1000, .tv_sec = 0};
-        TickType_t start_tick = xTaskGetTickCount();
 
         if( xSemaphoreTake( pxNetworkContext->xTlsContextSemaphore, xTicksToWait ) == pdTRUE )
         {
@@ -224,11 +295,23 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
 
             lBytesRead = 0;
 
-            esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
-            FD_ZERO( &read_fds );
-            FD_SET( lSockFd, &read_fds );
-            FD_ZERO( &error_fds );
-            FD_SET( lSockFd, &error_fds );
+            esp_err_t xError = esp_tls_get_conn_sockfd( pxNetworkContext->pxTls, &lSockFd );
+
+            if( xError != ESP_OK )
+            {
+                ESP_LOGE( TAG, "Failed to get the TLS socket descriptor: %s",
+                          esp_err_to_name( xError ) );
+                lBytesRead = -1;
+                goto transport_recv_semaphore_give;
+            }
+
+            /* Check if socket FD is within valid bounds for select(). */
+            if( ( lSockFd < 0 ) || ( lSockFd >= FD_SETSIZE ) )
+            {
+                ESP_LOGE( TAG, "Socket FD %d < 0 or >= FD_SETSIZE %d, cannot use select()", lSockFd, FD_SETSIZE );
+                lBytesRead = -1;
+                goto transport_recv_semaphore_give;
+            }
 
             do
             {
@@ -244,11 +327,25 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
                 else if( ( lResult == MBEDTLS_ERR_SSL_WANT_WRITE ) ||
                          ( lResult == MBEDTLS_ERR_SSL_WANT_READ ) )
                 {
-                    suseconds_t elapsed_time_usec = ( xTaskGetTickCount() - start_tick ) * portTICK_PERIOD_MS * 1000;
-                    timeout.tv_usec = ( timeout.tv_usec - elapsed_time_usec >= 0 ) ? timeout.tv_usec - elapsed_time_usec : 0;
+                    struct timeval timeout;
+
+                    if( ( timeouts.recvTimeoutMs > 0U ) &&
+                        ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) != pdFALSE ) )
+                    {
+                        break;
+                    }
+
+                    prvTicksToTimeval( xTicksToWait, &timeout );
+
+                    /* Zero and set before every select() call to avoid stale file descriptors */
+                    FD_ZERO( &read_fds );
+                    FD_SET( lSockFd, &read_fds );
+                    FD_ZERO( &error_fds );
+                    FD_SET( lSockFd, &error_fds );
 
                     int lSelectResult = select( lSockFd + 1, &read_fds, NULL, &error_fds, &timeout );
-                    if ( ( lSelectResult < 0 ) || FD_ISSET( lSockFd, &error_fds ) ) {
+                    if( ( lSelectResult < 0 ) || ( FD_ISSET( lSockFd, &error_fds ) != 0 ) )
+                    {
                         ESP_LOGE( TAG, "Error reading the message" );
                         lBytesRead = lResult = -1;
                     }
@@ -264,10 +361,11 @@ int32_t espTlsTransportRecv( NetworkContext_t* pxNetworkContext,
                     lBytesRead = ( int32_t ) lResult;
                 }
             }
-            while ( ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE ) &&
-                    ( lBytesRead == 0 ) );
+            while( ( xTaskCheckForTimeOut( &xTimeout, &xTicksToWait ) == pdFALSE ) &&
+                   ( lBytesRead == 0 ) );
 
 
+transport_recv_semaphore_give:
             ( void ) xSemaphoreGive( pxNetworkContext->xTlsContextSemaphore );
         }
     }
