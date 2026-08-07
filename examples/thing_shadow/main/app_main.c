@@ -15,12 +15,73 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "protocol_examples_common.h"
+#include "core_utility.h"
+#include "ldo_control.h"
+#include "buzzer.h"
+#include "uart_handler.h"
+#include "sensors.h"
 
-int aws_iot_demo_main( int argc, char ** argv );
+int aws_shadow_main(int argc, char **argv);
 
 #include "esp_log.h"
 
-static const char *TAG = "SHADOW_EXAMPLE";
+device_config_t device_config = {0x00};
+
+bool feed_watchdog = true;
+
+static const char *TAG = "CLASSIC-SHADOW";
+
+/**
+ * @brief
+ *
+ * @param param
+ */
+void feedWatchDog(void *param)
+{
+    esp_task_wdt_init(TWDT_TIMEOUT_S, PANIC_ENABLE);
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
+    ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
+    while (1)
+    {
+        if (feed_watchdog)
+        {
+            esp_task_wdt_reset();
+        }
+        vTaskDelay(WATCHDOG_FEED_TIME * 1000 / portTICK_RATE_MS); // feeding wdt
+    }
+}
+/**
+ * @brief
+ *
+ */
+static void WatchdogInit()
+{
+
+    xTaskCreate(feedWatchDog, "SleepTask", 1024 * 2, NULL, 2, NULL);
+}
+
+/**
+ * @brief
+ *
+ */
+void core_start(void)
+{
+    Sleep(5);
+    ldo_init();
+    ldo_on();
+    // buzzer_play_james_bond();
+    // setting watchdog timer for 2 seconds
+    WatchdogInit(); // Initializing Watchdog timer
+
+    WifiInit(); // WiFi Initialization
+
+    read_nvs_config(NULL);
+
+    GetStandardTime(); // Get Standard time
+    uart_initialize();
+
+
+}
 
 /*
  * Prototypes for the demos that can be started from this project.  Note the
@@ -29,31 +90,8 @@ static const char *TAG = "SHADOW_EXAMPLE";
 
 void app_main()
 {
-    ESP_LOGI(TAG, "[APP] Startup..");
-    ESP_LOGI(TAG, "[APP] Free memory: %"PRIu32" bytes", esp_get_free_heap_size());
-    ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
-
-    esp_log_level_set("*", ESP_LOG_INFO);
-    
-    /* Initialize NVS partition */
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        /* NVS partition was truncated
-         * and needs to be erased */
-        ESP_ERROR_CHECK(nvs_flash_erase());
-
-        /* Retry nvs_flash_init */
-        ESP_ERROR_CHECK(nvs_flash_init());
-    }
-    
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
-     * Read "Establishing Wi-Fi or Ethernet Connection" section in
-     * examples/protocols/README.md for more information about this function.
-     */
-    ESP_ERROR_CHECK(example_connect());
-
-    aws_iot_demo_main(0,NULL);
+    //** start the core functionality
+    core_start();
+    //** classsic shadow
+    aws_shadow_main(0, NULL);
 }

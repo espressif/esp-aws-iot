@@ -100,4 +100,6 @@ int32_t PublishToTopic( const char * pTopicFilter,
                         const char * pPayload,
                         size_t payloadLength );
 
+void cleanupOutgoingPublishes( void );
+extern MQTTContext_t mqttContext ;
 #endif /* ifndef SHADOW_DEMO_HELPERS_H_ */
