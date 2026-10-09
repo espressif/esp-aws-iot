@@ -1,3 +1,9 @@
+if(IDF_VERSION_MAJOR GREATER_EQUAL 6)
+    message(INFO "Skipping corePKCS11 compilation on ESP-IDF v6+, due to mbedtls4 not being integrated with PKCS yet")
+    idf_component_register()
+    return()
+endif()
+
 # This gives PKCS_INCLUDE_PUBLIC_DIRS, and PKCS_SOURCES
 include(${CMAKE_CURRENT_LIST_DIR}/corePKCS11/pkcsFilePaths.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/../common/crypto/cryptoFilePaths.cmake)
