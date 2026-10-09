@@ -180,6 +180,13 @@ OtaPalStatus_t otaPal_Abort( AfrOtaJobDocumentFields_t * const pFileContext )
         ota_ret = OtaPalSuccess;
     }
 
+    if (ota_ctx.update_handle != 0)
+    {
+        esp_ota_abort(ota_ctx.update_handle);
+        ota_ctx.update_handle = 0;
+    }
+    _esp_ota_ctx_clear( &ota_ctx );
+
     return ota_ret;
 }
 
