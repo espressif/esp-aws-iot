@@ -35,12 +35,10 @@
 #include "esp_partition.h"
 
 #include "spi_flash_mmap.h"
-#include "esp_image_format.h"
 #include "esp_ota_ops.h"
 #include "aws_esp_ota_ops.h"
 #include "mbedtls/bignum.h"
 #include "mbedtls/asn1.h"
-#include "mbedtls/base64.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -124,8 +122,12 @@ static OtaPalStatus_t asn1_to_raw_ecdsa( const uint8_t * signature,
         goto cleanup;
     }
 
-    ret = mbedtls_mpi_write_binary( &r, out_signature, ECDSA_INTEGER_LEN );
-    ret = mbedtls_mpi_write_binary( &s, out_signature + ECDSA_INTEGER_LEN, ECDSA_INTEGER_LEN );
+    if( ( ( ret = mbedtls_mpi_write_binary( &r, out_signature, ECDSA_INTEGER_LEN ) ) != 0 ) ||
+        ( ( ret = mbedtls_mpi_write_binary( &s, out_signature + ECDSA_INTEGER_LEN, ECDSA_INTEGER_LEN ) ) != 0 ) )
+    {
+        LogError( ( "Failed to write signature to binary buffer" ) );
+        goto cleanup;
+    }
 
 cleanup:
     mbedtls_mpi_free( &r );
@@ -237,10 +239,17 @@ OtaPalStatus_t otaPal_CheckFileSignature( AfrOtaJobDocumentFields_t * const pFil
 {
     OtaPalStatus_t result;
     uint32_t ulSignerCertSize;
-    void * pvSigVerifyContext;
+    void * pvSigVerifyContext = NULL;
     uint8_t * pucSignerCert = 0;
     static spi_flash_mmap_handle_t ota_data_map;
     uint32_t mmu_free_pages_count, len, flash_offset = 0;
+
+    if( ( pFileContext == NULL ) ||
+        ( pFileContext->signature == NULL ) ||
+        ( pFileContext->signatureLen == 0 ) )
+    {
+        return OtaPalSignatureCheckFailed;
+    }
 
     /* Verify an ECDSA-SHA256 signature. */
     if( CRYPTO_SignatureVerificationStart( &pvSigVerifyContext, cryptoASYMMETRIC_ALGORITHM_ECDSA,
@@ -255,8 +264,8 @@ OtaPalStatus_t otaPal_CheckFileSignature( AfrOtaJobDocumentFields_t * const pFil
     if( pucSignerCert == NULL )
     {
         LogError( ( "Cert read failed" ) );
-        CRYPTO_SignatureVerificationCleanup( pvSigVerifyContext );
-        return OtaPalBadSignerCert;
+        result =  OtaPalBadSignerCert;
+        goto end;
     }
     else
     {
@@ -282,7 +291,6 @@ OtaPalStatus_t otaPal_CheckFileSignature( AfrOtaJobDocumentFields_t * const pFil
         {
             LogError( ( "Partition mmap failed %d", ret ) );
             result = OtaPalSignatureCheckFailed;
-            CRYPTO_SignatureVerificationCleanup( pvSigVerifyContext );
             goto end;
         }
 
@@ -303,8 +311,14 @@ OtaPalStatus_t otaPal_CheckFileSignature( AfrOtaJobDocumentFields_t * const pFil
         LogInfo( ( "Signature verification succeeded." ) );
         result = OtaPalSuccess;
     }
+    pvSigVerifyContext = NULL;
 
 end:
+    if( pvSigVerifyContext != NULL )
+    {
+        CRYPTO_SignatureVerificationCleanup( pvSigVerifyContext );
+        pvSigVerifyContext = NULL;
+    }
     return result;
 }
 
@@ -403,10 +417,7 @@ OtaPalStatus_t otaPal_ActivateNewImage( AfrOtaJobDocumentFields_t * const pFileC
         {
             LogError( ( "esp_ota_set_boot_partition failed (%d)!", err ) );
             esp_partition_erase_range( ota_ctx.update_partition, 0, ota_ctx.update_partition->size );
-            _esp_ota_ctx_clear( &ota_ctx );
         }
-
-        otaPal_ResetDevice( pFileContext );
     }
 
     _esp_ota_ctx_clear( &ota_ctx );
@@ -621,6 +632,11 @@ esp_err_t otaPal_EraseLastBootPartition( void )
 bool otaPal_SetCodeSigningCertificate( const char * pcCodeSigningCertificatePEM )
 {
     bool xRet = true;
+
+    if( pcCodeSigningCertificatePEM == NULL )
+    {
+        return false;
+    }
 
     if( codeSigningCertificatePEM != NULL )
     {
